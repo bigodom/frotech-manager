@@ -11,4 +11,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    port: 3013,
+    open: true,
+    host: true,
+    allowedHosts: [
+      'hcm159'
+    ],
+  },
 })

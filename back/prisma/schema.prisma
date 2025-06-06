@@ -45,8 +45,44 @@ model Vehicle {
   registration      String
   chassi            String?  @unique
   renavam           String?  @unique
+  fleet             Int?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   @@map("vehicles")
+}
+
+model Maintenance {
+  id          Int      @id @default(autoincrement())
+  invoiceId   Int
+  issuer      String
+  issuerCnpj  String
+  date        DateTime
+  plate       String
+  description String
+  quantity    Int
+  unitCost    Float
+  totalCost   Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("maintenances")
+}
+
+model Fuel {
+  id          Int      @id @default(autoincrement())
+  invoiceId   Int
+  issuer      String
+  invoiceDate DateTime
+  date        DateTime
+  plate       String
+  kilometers  Int
+  fuelType    String
+  quantity    Float
+  unitCost    Float
+  totalCost   Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("fuels")
 }

@@ -18,6 +18,7 @@ const createVehicle = async (req, res) => {
       classification,
       registration,
       chassi,
+      fleet,
       renavam
     } = req.body;
 
@@ -36,6 +37,7 @@ const createVehicle = async (req, res) => {
         classification,
         registration,
         chassi,
+        fleet,
         renavam
       }
     });
@@ -95,6 +97,7 @@ const updateVehicle = async (req, res) => {
       classification,
       registration,
       chassi,
+      fleet,
       renavam
     } = req.body;
 
@@ -114,6 +117,7 @@ const updateVehicle = async (req, res) => {
         classification,
         registration,
         chassi,
+        fleet,
         renavam
       }
     });
@@ -139,10 +143,72 @@ const deleteVehicle = async (req, res) => {
   }
 };
 
+const updateMileage = async (req, res) => {
+  /* #swagger.tags = ['Vehicle']
+  #swagger.description = 'Update vehicle mileage' */
+  try {
+    const { id } = req.params;
+    const { mileage } = req.body;
+
+    const vehicle = await prisma.vehicle.update({
+      where: { id: parseInt(id) },
+      data: { mileage }
+    });
+
+    res.json(vehicle);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
+
+const updateMileageByPlate = async (req, res) => {
+  try {
+    const { plate, mileage } = req.body
+
+    const vehicle = await prisma.vehicle.update({
+      where: { plate },
+      data: { mileage: parseFloat(mileage) }
+    })
+
+    res.json(vehicle)
+  } catch (error) {
+    console.error("Erro ao atualizar quilometragem:", error)
+    res.status(500).json({ error: "Erro ao atualizar quilometragem" })
+  }
+}
+
+const updateMileageByPlateBatch = async (req, res) => {
+  try {
+    const { updates } = req.body
+
+    const results = await Promise.all(
+      updates.map(async ({ plate, mileage }) => {
+        try {
+          const vehicle = await prisma.vehicle.update({
+            where: { plate },
+            data: { mileage: parseFloat(mileage) }
+          })
+          return { plate, success: true, vehicle }
+        } catch (error) {
+          return { plate, success: false, error: error.message }
+        }
+      })
+    )
+
+    res.json(results)
+  } catch (error) {
+    console.error("Erro ao atualizar quilometragem em lote:", error)
+    res.status(500).json({ error: "Erro ao atualizar quilometragem em lote" })
+  }
+}
+
 export{
   createVehicle,
   getAllVehicles,
   getVehicleById,
   updateVehicle,
-  deleteVehicle
+  deleteVehicle,
+  updateMileage,
+  updateMileageByPlate,
+  updateMileageByPlateBatch
 }; 

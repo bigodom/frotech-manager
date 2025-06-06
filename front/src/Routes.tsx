@@ -16,8 +16,8 @@ const AppRoutes = () => {
           <Route path="/drivers" element={<Drivers />} />
           <Route path="/tires" element={<Tires />} />
           <Route path="/alerts" element={<Alerts />} />
-          <Route path="/maintenance" element={<div>Manutenção</div>} />
-          <Route path="/fuel" element={<div>Abastecimento</div>} />
+          <Route path="/maintenance" element={<div>Relatórios</div>} />
+          <Route path="/fuel" element={<div>Relatórios</div>} />
           <Route path="/reports" element={<div>Relatórios</div>} />
           <Route path="/routes" element={<div>Rotas</div>} />
           <Route path="/settings" element={<div>Configurações</div>} />

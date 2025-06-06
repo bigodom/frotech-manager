@@ -14,10 +14,8 @@ app.use(json());
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 // Routes
-app.use('/api/drivers', driverRoutes);
-app.use('/api/vehicles', vehicleRoutes);
-
-const PORT = process.env.PORT || 3000;
+app.use(driverRoutes);
+app.use(vehicleRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running');
