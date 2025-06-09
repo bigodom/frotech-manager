@@ -54,15 +54,14 @@ model Vehicle {
 
 model Maintenance {
   id          Int      @id @default(autoincrement())
-  invoiceId   Int
-  issuer      String
-  issuerCnpj  String
-  date        DateTime
-  plate       String
+  vehicleId   Int
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
   description String
-  quantity    Int
-  unitCost    Float
-  totalCost   Float
+  cost        Float
+  date        DateTime
+  type        String   // PREVENTIVA, CORRETIVA
+  provider    String?
+  observation String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

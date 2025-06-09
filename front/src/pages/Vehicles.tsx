@@ -294,14 +294,14 @@ export default function Vehicles() {
       </div>
 
       {isFormOpen && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Cadastrar Novo Veículo</CardTitle>
-            <CardDescription>
-              Preencha os dados do veículo para cadastrá-lo na frota.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Cadastrar Novo Veículo</DialogTitle>
+              <CardDescription>
+                Preencha os dados do veículo para cadastrá-lo na frota.
+              </CardDescription>
+            </DialogHeader>
             <form onSubmit={handleNewVehicle} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -444,8 +444,8 @@ export default function Vehicles() {
                 <Button type="submit">Salvar</Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       )}
 
       <Card>

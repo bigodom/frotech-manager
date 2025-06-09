@@ -305,6 +305,15 @@ export default function Drivers() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="edit-cnhExpiration">Validade CNH</Label>
+                  <Input
+                    type="date"
+                    id="edit-cnhExpiration"
+                    value={selectedDriver?.cnhExpiration ? new Date(selectedDriver.cnhExpiration).toISOString().split('T')[0] : ''}
+                    onChange={(e) => setSelectedDriver(prev => prev ? {...prev, cnhExpiration: new Date(e.target.value)} : null)}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="edit-phone">Telefone</Label>
                   <Input
                     id="edit-phone"
@@ -361,6 +370,12 @@ export default function Drivers() {
                 <div>
                   <Label>Categoria CNH</Label>
                   <p className="text-sm text-gray-600">{selectedDriver?.cnhCategory || '-'}</p>
+                </div>
+                <div>
+                  <Label>Validade CNH</Label>
+                  <p className="text-sm text-gray-600">
+                    {selectedDriver?.cnhExpiration ? new Date(selectedDriver.cnhExpiration).toLocaleDateString() : '-'}
+                  </p>
                 </div>
                 <div>
                   <Label>Telefone</Label>

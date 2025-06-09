@@ -8,6 +8,7 @@ export type Driver = {
     phone?: string;
     address?: string;
     position?: string;
+    toxicologicalDate?: Date;
     createdAt: Date;
     updatedAt: Date;
 }

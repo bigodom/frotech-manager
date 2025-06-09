@@ -12,7 +12,8 @@ const createDriver = async (req, res) => {
       cnhExpiration,
       phone,
       address,
-      position
+      position,
+      toxicologicalDate
     } = req.body;
 
     const driver = await prisma.driver.create({
@@ -24,7 +25,8 @@ const createDriver = async (req, res) => {
         cnhExpiration: cnhExpiration ? new Date(cnhExpiration) : null,
         phone,
         address,
-        position
+        position,
+        toxicologicalDate: toxicologicalDate ? new Date(toxicologicalDate) : null
       }
     });
 
@@ -77,7 +79,8 @@ const updateDriver = async (req, res) => {
       cnhExpiration,
       phone,
       address,
-      position
+      position,
+      toxicologicalDate
     } = req.body;
 
     const driver = await prisma.driver.update({
@@ -90,7 +93,8 @@ const updateDriver = async (req, res) => {
         cnhExpiration: cnhExpiration ? new Date(cnhExpiration) : null,
         phone,
         address,
-        position
+        position,
+        toxicologicalDate: toxicologicalDate ? new Date(toxicologicalDate) : null
       }
     });
 
