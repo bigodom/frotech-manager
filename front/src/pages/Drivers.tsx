@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Plus } from "lucide-react"
 import type { CreateDriverDTO, Driver } from "@/lib/types/Driver"
 import api from "@/services/useApi"
-import { dateToISO } from "@/lib/utils"
 
 export default function Drivers() {
   const [drivers, setDrivers] = useState<Driver[]>([])

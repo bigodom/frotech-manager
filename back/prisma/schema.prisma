@@ -85,3 +85,32 @@ model Fuel {
 
   @@map("fuels")
 }
+
+model Alerts {
+  id          Int      @id @default(autoincrement())
+  vehicleId   Int
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  type        String   
+  description String?
+  value       Float?
+  dueDate     DateTime?
+  kmAlert     Int
+  isCompleted Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("alerts")
+}
+
+model Tire {
+  id          Int      @id
+  vehicleId   Int?
+  vehicle     Vehicle? @relation(fields: [vehicleId], references: [id])
+  position    String?
+  brand       String
+  model       String?
+  size        String?
+  pressure    Float?
+  mileage     Float?
+
+}
