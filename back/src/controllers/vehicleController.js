@@ -162,6 +162,8 @@ const updateMileage = async (req, res) => {
 }
 
 const updateMileageByPlate = async (req, res) => {
+  /* #swagger.tags = ['Vehicle']
+  #swagger.description = 'Update vehicle mileage by plate' */
   try {
     const { plate, mileage } = req.body
 
@@ -178,6 +180,8 @@ const updateMileageByPlate = async (req, res) => {
 }
 
 const updateMileageByPlateBatch = async (req, res) => {
+  /* #swagger.tags = ['Vehicle']
+  #swagger.description = 'Update vehicle mileage in batch by plate' */
   try {
     const { updates } = req.body
 

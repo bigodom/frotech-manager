@@ -14,17 +14,18 @@ datasource db {
 }
 
 model Driver {
-  id            Int       @id @default(autoincrement())
-  name          String
-  cpf           String    @unique
-  cnh           String?   @unique
-  cnhCategory   String?
-  cnhExpiration DateTime?
-  phone         String?
-  address       String?
-  position      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                Int       @id @default(autoincrement())
+  name              String
+  cpf               String    @unique
+  cnh               String?   @unique
+  cnhCategory       String?
+  cnhExpiration     DateTime?
+  phone             String?
+  address           String?
+  position          String?
+  toxicologicalDate DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@map("drivers")
 }
@@ -48,20 +49,23 @@ model Vehicle {
   fleet             Int?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  Alerts            Alerts[]
+  Tire              Tire[]
 
   @@map("vehicles")
 }
 
 model Maintenance {
   id          Int      @id @default(autoincrement())
-  vehicleId   Int
-  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
-  description String
-  cost        Float
+  invoiceDate DateTime
+  invoiceId   Int
+  issuer      String
   date        DateTime
-  type        String   // PREVENTIVA, CORRETIVA
-  provider    String?
-  observation String?
+  plate       String
+  description String
+  quantity    Float
+  value       Float
+  totalCost   Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -87,30 +91,29 @@ model Fuel {
 }
 
 model Alerts {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   vehicleId   Int
-  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
-  type        String   
+  vehicle     Vehicle   @relation(fields: [vehicleId], references: [id])
+  type        String
   description String?
   value       Float?
   dueDate     DateTime?
   kmAlert     Int
-  isCompleted Boolean @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isCompleted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("alerts")
 }
 
 model Tire {
-  id          Int      @id
-  vehicleId   Int?
-  vehicle     Vehicle? @relation(fields: [vehicleId], references: [id])
-  position    String?
-  brand       String
-  model       String?
-  size        String?
-  pressure    Float?
-  mileage     Float?
-
+  id        Int      @id
+  vehicleId Int?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+  position  String?
+  brand     String
+  model     String?
+  size      String?
+  pressure  Float?
+  mileage   Float?
 }

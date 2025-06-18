@@ -1,27 +1,46 @@
-const { PrismaClient } = require('@prisma/client')
+import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 const createMaintenance = async (req, res) => {
+  /* #swagger.tags = ['Maintenance']
+  #swagger.description = 'Create maintenance' */
   try {
+    const {
+      invoiceId,
+      invoiceDate,
+      issuer,
+      date,
+      plate,
+      description,
+      quantity,
+      value,
+      totalCost
+    } = req.body
     const maintenance = await prisma.maintenance.create({
-      data: req.body,
-      include: {
-        vehicle: true
+      data: {
+        invoiceId,
+        invoiceDate: invoiceDate ? new Date(invoiceDate) : null,
+        issuer,
+        date: date ? new Date(date) : null,
+        plate,
+        description,
+        quantity,
+        value: parseFloat(value),
+        totalCost: parseFloat(totalCost)
       }
     })
-    res.json(maintenance)
+    res.status(201).json(maintenance)
   } catch (error) {
     console.error('Erro ao criar manutenção:', error)
-    res.status(500).json({ error: 'Erro ao criar manutenção' })
+    res.status(400).json({ error: 'Erro ao criar manutenção' })
   }
 }
 
 const getMaintenances = async (req, res) => {
+  /* #swagger.tags = ['Maintenance']
+  #swagger.description = 'Get all maintenances' */
   try {
     const maintenances = await prisma.maintenance.findMany({
-      include: {
-        vehicle: true
-      },
       orderBy: {
         date: 'desc'
       }
@@ -33,7 +52,30 @@ const getMaintenances = async (req, res) => {
   }
 }
 
+const getMaintenancesByPlate = async (req, res) => {
+  /* #swagger.tags = ['Maintenance']
+  #swagger.description = 'Get maintenances by vehicle plate' */
+  try {
+    const { plate } = req.params
+    const maintenances = await prisma.maintenance.findMany({
+      where: { plate },
+      include: {
+        vehicle: true
+      },
+      orderBy: {
+        date: 'desc'
+      }
+    })
+    res.json(maintenances)
+  } catch (error) {
+    console.error('Erro ao buscar manutenções por placa:', error)
+    res.status(500).json({ error: 'Erro ao buscar manutenções por placa' })
+  }
+}
+
 const getMaintenanceById = async (req, res) => {
+  /* #swagger.tags = ['Maintenance']
+  #swagger.description = 'Get maintenance by ID' */
   try {
     const maintenance = await prisma.maintenance.findUnique({
       where: { id: parseInt(req.params.id) },
@@ -52,6 +94,8 @@ const getMaintenanceById = async (req, res) => {
 }
 
 const updateMaintenance = async (req, res) => {
+  /* #swagger.tags = ['Maintenance']
+  #swagger.description = 'Update maintenance' */
   try {
     const maintenance = await prisma.maintenance.update({
       where: { id: parseInt(req.params.id) },
@@ -68,6 +112,8 @@ const updateMaintenance = async (req, res) => {
 }
 
 const deleteMaintenance = async (req, res) => {
+  /* #swagger.tags = ['Maintenance']
+  #swagger.description = 'Delete maintenance' */
   try {
     await prisma.maintenance.delete({
       where: { id: parseInt(req.params.id) }
@@ -79,7 +125,7 @@ const deleteMaintenance = async (req, res) => {
   }
 }
 
-module.exports = {
+export {
   createMaintenance,
   getMaintenances,
   getMaintenanceById,
