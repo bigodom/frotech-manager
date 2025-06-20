@@ -6,6 +6,7 @@ import Drivers from "./pages/Drivers";
 import Tires from "./pages/Tires";
 import Alerts from "./pages/Alerts";
 import MaintenancePage from "./pages/Maintenance";
+import Fuel from "./pages/Fuel";
 
 const AppRoutes = () => {
   return (
@@ -18,7 +19,7 @@ const AppRoutes = () => {
           <Route path="/tires" element={<Tires />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/maintenance" element={<MaintenancePage/>} />
-          <Route path="/fuel" element={<div>Relatórios</div>} />
+          <Route path="/fuel" element={<Fuel />} />
           <Route path="/reports" element={<div>Relatórios</div>} />
           <Route path="/routes" element={<div>Rotas</div>} />
           <Route path="/settings" element={<div>Configurações</div>} />

@@ -3,6 +3,7 @@ import cors from 'cors';
 import { readFileSync } from 'fs';
 import driverRoutes from './routes/driverRoutes.js';
 import vehicleRoutes from './routes/vehicleRoutes.js';
+import fuelRoutes from './routes/fuelRoutes.js';
 import swaggerUi from 'swagger-ui-express';
 import maintenanceRouter from './routes/maintenanceRoutes.js';
 const swaggerFile = JSON.parse(readFileSync('./src/swagger.json', 'utf8'));
@@ -17,6 +18,7 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 // Routes
 app.use(driverRoutes);
 app.use(vehicleRoutes);
+app.use(fuelRoutes);
 app.use(maintenanceRouter);
 
 app.get('/', (req, res) => {

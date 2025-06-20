@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,45 +25,56 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Plus } from "lucide-react"
+import type { Alerts } from "@/lib/types/Alerts"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-interface Alert {
-  id: string
-  type: string
-  priority: string
-  status: string
-  vehicleId: string
-  description: string
-  createdAt: string
-  dueDate: string
-}
+import { toast } from "sonner"
+import api from "@/services/useApi"
+import type { Vehicle } from "@/lib/types/Vehicle"
 
 export default function Alerts() {
-  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [alerts, setAlerts] = useState<Alerts[]>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [showCompleted, setShowCompleted] = useState(false)
   const [formData, setFormData] = useState({
+    vehicleId: 0,
     type: "",
-    priority: "medium",
-    status: "pending",
-    vehicleId: "",
     description: "",
-    dueDate: ""
+    value: undefined,
+    dueDate: "",
+    kmAlert: 0,
+    isCompleted: false,
+    priority: "medium",
+    status: "pending"
   })
+  const [customType, setCustomType] = useState("")
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const newAlert: Alert = {
-      id: crypto.randomUUID(),
-      ...formData,
-      createdAt: new Date().toISOString().split('T')[0]
+    const newAlert: Alerts = {
+      id: Math.floor(Math.random() * 1000000),
+      vehicleId: Number(formData.vehicleId),
+      type: formData.type === "other" ? customType : formData.type,
+      description: formData.description,
+      value: formData.value ? Number(formData.value) : undefined,
+      dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+      kmAlert: Number(formData.kmAlert),
+      isCompleted: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     }
     setAlerts([...alerts, newAlert])
     setFormData({
+      vehicleId: 0,
       type: "",
-      priority: "medium",
-      status: "pending",
-      vehicleId: "",
       description: "",
-      dueDate: ""
+      value: undefined,
+      dueDate: "",
+      kmAlert: 0,
+      isCompleted: false,
+      priority: "medium",
+      status: "pending"
     })
     setIsFormOpen(false)
   }
@@ -83,6 +94,32 @@ export default function Alerts() {
     }))
   }
 
+  useEffect(() => {
+    async function fetchVehicles() {
+      try {
+        const response = await api.get("/vehicle")
+        setVehicles(response.data)
+      } catch (error) {
+        console.error("Erro ao buscar veículos:", error)
+      }
+    }
+    fetchVehicles()
+    toast.warning("Carregando veículos...", { duration: 2000, icon: "🔄" })
+  }, [])
+
+  useEffect(() => {
+    alerts.forEach(alert => {
+      if (!alert.isCompleted) {
+        const vehicle = vehicles.find(v => v.id === alert.vehicleId)
+        if (vehicle && typeof vehicle.mileage === 'number' && alert.kmAlert > 0) {
+          if (vehicle.mileage >= alert.kmAlert - 500 && vehicle.mileage < alert.kmAlert) {
+            toast(`O veículo de placa ${vehicle.plate} está a menos de 500km do alerta: ${alert.description || alert.type}`)
+          }
+        }
+      }
+    })
+  }, [alerts, vehicles])
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -92,23 +129,32 @@ export default function Alerts() {
           Novo Alerta
         </Button>
       </div>
+      <div className="flex items-center gap-2 mb-2">
+        <input
+          type="checkbox"
+          id="showCompleted"
+          checked={showCompleted}
+          onChange={() => setShowCompleted((v) => !v)}
+        />
+        <Label htmlFor="showCompleted">Exibir apenas alertas concluídos</Label>
+      </div>
 
       {isFormOpen && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Criar Novo Alerta</CardTitle>
-            <CardDescription>
-              Preencha os dados para criar um novo alerta.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Criar Novo Alerta</DialogTitle>
+            </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo de Alerta</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value) => handleSelectChange("type", value)}
+                    onValueChange={(value) => {
+                      handleSelectChange("type", value)
+                      if (value !== "other") setCustomType("")
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o tipo" />
@@ -122,6 +168,15 @@ export default function Alerts() {
                       <SelectItem value="other">Outro</SelectItem>
                     </SelectContent>
                   </Select>
+                  {formData.type === "other" && (
+                    <Input
+                      className="mt-2"
+                      placeholder="Digite o tipo de alerta"
+                      value={customType}
+                      onChange={e => setCustomType(e.target.value)}
+                      required
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="priority">Prioridade</Label>
@@ -145,9 +200,9 @@ export default function Alerts() {
                   <Input
                     id="vehicleId"
                     name="vehicleId"
-                    value={formData.vehicleId}
+                    value={formData.vehicleId.toString()}
                     onChange={handleChange}
-                    placeholder="Ex: ABC-1234"
+                    placeholder="Ex: 1234"
                     required
                   />
                 </div>
@@ -202,8 +257,8 @@ export default function Alerts() {
                 <Button type="submit">Salvar</Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       )}
 
       <Card>
@@ -218,62 +273,33 @@ export default function Alerts() {
             <TableHeader>
               <TableRow>
                 <TableHead>Tipo</TableHead>
-                <TableHead>Prioridade</TableHead>
                 <TableHead>Veículo</TableHead>
                 <TableHead>Descrição</TableHead>
-                <TableHead>Criado em</TableHead>
                 <TableHead>Data Limite</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>KM Alerta</TableHead>
+                <TableHead>Concluído</TableHead>
+                <TableHead>Criado em</TableHead>
+                <TableHead>Atualizado em</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {alerts.length === 0 ? (
+              {alerts.filter(a => a.isCompleted === showCompleted).length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center">
-                    Nenhum alerta cadastrado
+                  <TableCell colSpan={8} className="text-center">
+                    Nenhum alerta encontrado
                   </TableCell>
                 </TableRow>
               ) : (
-                alerts.map((alert) => (
+                alerts.filter(a => a.isCompleted === showCompleted).map((alert) => (
                   <TableRow key={alert.id}>
-                    <TableCell>
-                      {alert.type === "maintenance" && "Manutenção"}
-                      {alert.type === "inspection" && "Inspeção"}
-                      {alert.type === "document" && "Documentação"}
-                      {alert.type === "tire" && "Pneu"}
-                      {alert.type === "fuel" && "Combustível"}
-                      {alert.type === "other" && "Outro"}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium
-                        ${alert.priority === "low" && "bg-green-100 text-green-800"}
-                        ${alert.priority === "medium" && "bg-yellow-100 text-yellow-800"}
-                        ${alert.priority === "high" && "bg-orange-100 text-orange-800"}
-                        ${alert.priority === "urgent" && "bg-red-100 text-red-800"}
-                      `}>
-                        {alert.priority === "low" && "Baixa"}
-                        {alert.priority === "medium" && "Média"}
-                        {alert.priority === "high" && "Alta"}
-                        {alert.priority === "urgent" && "Urgente"}
-                      </span>
-                    </TableCell>
+                    <TableCell>{alert.type}</TableCell>
                     <TableCell>{alert.vehicleId}</TableCell>
                     <TableCell>{alert.description}</TableCell>
-                    <TableCell>{alert.createdAt}</TableCell>
-                    <TableCell>{alert.dueDate}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium
-                        ${alert.status === "pending" && "bg-yellow-100 text-yellow-800"}
-                        ${alert.status === "in_progress" && "bg-blue-100 text-blue-800"}
-                        ${alert.status === "resolved" && "bg-green-100 text-green-800"}
-                        ${alert.status === "cancelled" && "bg-gray-100 text-gray-800"}
-                      `}>
-                        {alert.status === "pending" && "Pendente"}
-                        {alert.status === "in_progress" && "Em Andamento"}
-                        {alert.status === "resolved" && "Resolvido"}
-                        {alert.status === "cancelled" && "Cancelado"}
-                      </span>
-                    </TableCell>
+                    <TableCell>{alert.dueDate ? new Date(alert.dueDate).toLocaleDateString('pt-BR') : '-'}</TableCell>
+                    <TableCell>{alert.kmAlert}</TableCell>
+                    <TableCell>{alert.isCompleted ? 'Sim' : 'Não'}</TableCell>
+                    <TableCell>{new Date(alert.createdAt).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{new Date(alert.updatedAt).toLocaleDateString('pt-BR')}</TableCell>
                   </TableRow>
                 ))
               )}
