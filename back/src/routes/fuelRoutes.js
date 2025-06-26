@@ -1,6 +1,6 @@
 import { Router } from 'express';
 const fuelRouter = Router();
-import { createFuel, getAllFuels, getFuelById, updateFuel, deleteFuel } from '../controllers/fuelController.js';
+import { createFuel, getAllFuels, getFuelById, updateFuel, deleteFuel, getFuelByPlate } from '../controllers/fuelController.js';
 
 fuelRouter.route('/fuel')
     .get(getAllFuels)
@@ -10,5 +10,8 @@ fuelRouter.route('/fuel/:id')
     .get(getFuelById)
     .put(updateFuel)
     .delete(deleteFuel);
+
+fuelRouter.route('/fuel/plate/:plate')
+    .get(getFuelByPlate);
 
 export default fuelRouter; 

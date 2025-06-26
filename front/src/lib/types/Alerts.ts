@@ -4,7 +4,7 @@ export type Alerts = {
     type: string;
     description?: string;
     value?: number;
-    dueDate?: Date;
+    doneDate?: Date;
     kmAlert: number;
     isCompleted: boolean;
     createdAt: Date;

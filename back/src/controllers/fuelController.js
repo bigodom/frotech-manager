@@ -14,8 +14,7 @@ const createFuel = async (req, res) => {
       fuelType,
       quantity,
       unitCost,
-      totalCost,
-      classification
+      totalCost
     } = req.body;
 
     const fuel = await prisma.fuel.create({
@@ -29,8 +28,7 @@ const createFuel = async (req, res) => {
         fuelType,
         quantity,
         unitCost,
-        totalCost,
-        classification
+        totalCost
       }
     });
 
@@ -85,8 +83,7 @@ const updateFuel = async (req, res) => {
       fuelType,
       quantity,
       unitCost,
-      totalCost,
-      classification
+      totalCost
     } = req.body;
 
     const fuel = await prisma.fuel.update({
@@ -101,8 +98,7 @@ const updateFuel = async (req, res) => {
         fuelType,
         quantity,
         unitCost,
-        totalCost,
-        classification
+        totalCost
       }
     });
 
@@ -127,10 +123,27 @@ const deleteFuel = async (req, res) => {
   }
 };
 
+const getFuelByPlate = async (req, res) => {
+  /* #swagger.tags = ['Fuel']
+  #swagger.description = 'Get fuel records by vehicle plate' */
+  try {
+    const { plate } = req.params;
+    const fuels = await prisma.fuel.findMany({
+      where: { plate },
+      orderBy: { date: 'desc' }
+    });
+
+    res.json(fuels);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
 export {
   createFuel,
   getAllFuels,
   getFuelById,
   updateFuel,
-  deleteFuel
+  deleteFuel,
+  getFuelByPlate
 }; 

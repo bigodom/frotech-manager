@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Plus } from "lucide-react"
 import type { CreateFuelDTO, Fuel } from "@/lib/types/Fuel"
 import api from "@/services/useApi"
+import { formatDate } from "@/lib/utils"
 
 export default function Fuel() {
   const [fuels, setFuels] = useState<Fuel[]>([])
@@ -34,8 +35,7 @@ export default function Fuel() {
       fuelType: formData.get("fuelType") as string,
       quantity: parseFloat(formData.get("quantity") as string),
       unitCost: parseFloat(formData.get("unitCost") as string),
-      totalCost: parseFloat(formData.get("totalCost") as string),
-      classification: parseInt(formData.get("classification") as string),
+      totalCost: parseFloat(formData.get("totalCost") as string)
     }
 
     api.post("/fuel", newFuel)
@@ -64,8 +64,6 @@ export default function Fuel() {
 
   const handleDeleteFuel = async () => {
     if (!selectedFuel) return
-
-    if (window.confirm(`Tem certeza que deseja excluir o abastecimento da placa ${selectedFuel.plate}?`)) {
       try {
         await api.delete(`/fuel/${selectedFuel.id}`)
         await fetchFuels()
@@ -74,7 +72,7 @@ export default function Fuel() {
       } catch (error) {
         console.error("Erro ao excluir abastecimento:", error)
       }
-    }
+
   }
 
   const fetchFuels = async () => {
@@ -110,6 +108,7 @@ export default function Fuel() {
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm])
+
 
   const totalPages = Math.ceil(filteredFuels.length / PAGE_SIZE)
   const paginatedFuels = filteredFuels.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -158,18 +157,7 @@ export default function Fuel() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="fuelType">Tipo de Combustível *</Label>
-                  <Select name="fuelType" required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["Gasolina", "Etanol", "Diesel", "GNV", "Flex"].map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input id="fuelType" name="fuelType" required></Input>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="quantity">Quantidade (L) *</Label>
@@ -182,10 +170,6 @@ export default function Fuel() {
                 <div className="space-y-2">
                   <Label htmlFor="totalCost">Custo Total (R$) *</Label>
                   <Input id="totalCost" name="totalCost" type="number" step="0.01" required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="classification">Classificação *</Label>
-                  <Input id="classification" name="classification" type="number" required />
                 </div>
               </div>
               <div className="flex justify-end space-x-2">
@@ -241,7 +225,7 @@ export default function Fuel() {
                       <TableRow key={fuel.id}>
                         <TableCell>{fuel.plate}</TableCell>
                         <TableCell>{fuel.issuer}</TableCell>
-                        <TableCell>{new Date(fuel.date).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell>{formatDate(fuel.date)}</TableCell>
                         <TableCell>{fuel.fuelType}</TableCell>
                         <TableCell>{fuel.quantity} L</TableCell>
                         <TableCell>R$ {fuel.totalCost.toFixed(2)}</TableCell>
@@ -394,15 +378,6 @@ export default function Fuel() {
                     onChange={(e) => setSelectedFuel({...selectedFuel, totalCost: parseFloat(e.target.value)})}
                     type="number"
                     step="0.01"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-classification">Classificação</Label>
-                  <Input
-                    id="edit-classification"
-                    value={selectedFuel.classification}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, classification: parseInt(e.target.value)})}
-                    type="number"
                   />
                 </div>
               </div>

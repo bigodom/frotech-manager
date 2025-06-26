@@ -9,6 +9,7 @@ import { Plus } from "lucide-react"
 import type { Maintenance, CreateMaintenanceDTO } from "@/lib/types/Maintenance"
 import api from "@/services/useApi"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { formatDate } from "@/lib/utils"
 
 const PAGE_SIZE = 10
 
@@ -19,6 +20,7 @@ export default function MaintenancePage() {
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [searchPlate, setSearchPlate] = useState("")
 
   useEffect(() => {
     fetchMaintenances()
@@ -90,9 +92,12 @@ export default function MaintenancePage() {
     }
   }
 
-  // Paginação
-  const totalPages = Math.ceil(maintenances.length / PAGE_SIZE)
-  const paginatedMaintenances = maintenances.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  // Paginação e filtro
+  const filteredMaintenances = maintenances.filter(m =>
+    searchPlate === "" || m.plate.toLowerCase().includes(searchPlate.toLowerCase())
+  )
+  const totalPages = Math.ceil(filteredMaintenances.length / PAGE_SIZE)
+  const paginatedMaintenances = filteredMaintenances.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   return (
     <div className="space-y-6">
@@ -163,12 +168,24 @@ export default function MaintenancePage() {
       <Card>
         <CardHeader>
           <CardTitle>Histórico de Manutenções</CardTitle>
+          <div className="mt-2">
+            <Input
+              placeholder="Filtrar por placa..."
+              value={searchPlate}
+              onChange={e => {
+                setSearchPlate(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="max-w-xs"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="max-h-[calc(100vh-300px)] overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Placa</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Custo Total (R$)</TableHead>
@@ -184,6 +201,7 @@ export default function MaintenancePage() {
                 ) : (
                   paginatedMaintenances.map((m) => (
                     <TableRow key={m.id}>
+                      <TableCell>{m.plate}</TableCell>
                       <TableCell>
                         <button
                           onClick={() => {
@@ -195,7 +213,7 @@ export default function MaintenancePage() {
                           {m.description}
                         </button>
                       </TableCell>
-                      <TableCell>{new Date(m.date).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatDate(m.date)}</TableCell>
                       <TableCell>{m.totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</TableCell>
                     </TableRow>
                   ))
@@ -340,7 +358,7 @@ export default function MaintenancePage() {
                 </div>
                 <div>
                   <Label>Data</Label>
-                  <p className="text-sm text-gray-600">{selectedMaintenance?.date ? new Date(selectedMaintenance.date).toLocaleDateString() : '-'}</p>
+                  <p className="text-sm text-gray-600">{selectedMaintenance?.date ? formatDate(selectedMaintenance.date) : '-'}</p>
                 </div>
                 <div>
                   <Label>Custo Total</Label>
@@ -356,7 +374,7 @@ export default function MaintenancePage() {
                 </div>
                 <div>
                   <Label>Data da Nota</Label>
-                  <p className="text-sm text-gray-600">{selectedMaintenance?.invoiceDate ? new Date(selectedMaintenance.invoiceDate).toLocaleDateString() : '-'}</p>
+                  <p className="text-sm text-gray-600">{selectedMaintenance?.invoiceDate ? formatDate(selectedMaintenance.invoiceDate) : '-'}</p>
                 </div>
                 <div>
                   <Label>Emissor</Label>

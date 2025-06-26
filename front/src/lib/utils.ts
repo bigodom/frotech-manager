@@ -8,3 +8,9 @@ export function cn(...inputs: ClassValue[]) {
 export const dateToISO = (date: string) => {
   return new Date(date).toISOString();
 }
+
+export const formatDate = (dateString : string | Date): string => {
+  const [data] = dateString.toString().split('T') // Get the date part only;
+  const [year, month, day] = data.split('-');
+  return `${day}/${month}/${year}`;
+};

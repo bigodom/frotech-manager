@@ -10,6 +10,7 @@ import { Plus, Gauge } from "lucide-react"
 import type { Vehicle, CreateVehicleDTO } from "../lib/types/Vehicle"
 import { classificationOptions } from "@/lib/types/Vehicle"
 import api from "@/services/useApi"
+import { Link } from "react-router-dom"
 
 export default function Vehicles() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
@@ -525,12 +526,13 @@ export default function Vehicles() {
                     <TableHead>Modelo</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Quilometragem</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredVehicles.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center">
+                      <TableCell colSpan={5} className="text-center">
                         Nenhum veículo encontrado
                       </TableCell>
                     </TableRow>
@@ -538,19 +540,28 @@ export default function Vehicles() {
                     filteredVehicles.map((vehicle) => (
                       <TableRow key={vehicle.id}>
                         <TableCell>
-                          <button
-                            onClick={() => {
-                              setSelectedVehicle(vehicle)
-                              setIsEditOpen(true)
-                            }}
+                          <Link
+                            to={`/vehicles/analysis/${vehicle.plate}`}
                             className="text-blue-600 hover:text-blue-800 hover:underline"
                           >
                             {vehicle.plate}
-                          </button>
+                          </Link>
                         </TableCell>
                         <TableCell>{vehicle.model}</TableCell>
                         <TableCell>{vehicle.type}</TableCell>
                         <TableCell>{vehicle.mileage?.toLocaleString() || '-'}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedVehicle(vehicle)
+                              setIsEditOpen(true)
+                            }}
+                          >
+                            Abrir
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))
                   )}

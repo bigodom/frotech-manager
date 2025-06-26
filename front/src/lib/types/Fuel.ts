@@ -10,7 +10,6 @@ export type Fuel = {
     quantity: number;
     unitCost: number;
     totalCost: number;
-    classification: number;
     createdAt: Date;
     updatedAt: Date;
 }

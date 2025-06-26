@@ -97,7 +97,7 @@ model Alerts {
   type        String
   description String?
   value       Float?
-  dueDate     DateTime?
+  doneDate    DateTime?
   kmAlert     Int
   isCompleted Boolean   @default(false)
   createdAt   DateTime  @default(now())

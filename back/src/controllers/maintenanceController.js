@@ -59,12 +59,7 @@ const getMaintenancesByPlate = async (req, res) => {
     const { plate } = req.params
     const maintenances = await prisma.maintenance.findMany({
       where: { plate },
-      include: {
-        vehicle: true
-      },
-      orderBy: {
-        date: 'desc'
-      }
+      orderBy: { date: 'desc' }
     })
     res.json(maintenances)
   } catch (error) {
@@ -130,5 +125,6 @@ export {
   getMaintenances,
   getMaintenanceById,
   updateMaintenance,
-  deleteMaintenance
+  deleteMaintenance,
+  getMaintenancesByPlate
 } 

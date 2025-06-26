@@ -7,6 +7,7 @@ import Tires from "./pages/Tires";
 import Alerts from "./pages/Alerts";
 import MaintenancePage from "./pages/Maintenance";
 import Fuel from "./pages/Fuel";
+import VehicleAnalysis from "./pages/VehicleAnalysis"
 
 const AppRoutes = () => {
   return (
@@ -21,8 +22,8 @@ const AppRoutes = () => {
           <Route path="/maintenance" element={<MaintenancePage/>} />
           <Route path="/fuel" element={<Fuel />} />
           <Route path="/reports" element={<div>Relatórios</div>} />
-          <Route path="/routes" element={<div>Rotas</div>} />
           <Route path="/settings" element={<div>Configurações</div>} />
+          <Route path="/vehicles/analysis/:plate" element={<VehicleAnalysis />} />
         </Route>
       </Routes>
     </BrowserRouter>
