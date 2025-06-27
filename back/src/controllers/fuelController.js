@@ -139,11 +139,40 @@ const getFuelByPlate = async (req, res) => {
   }
 }
 
+const getOrphanedFuels = async (req, res) => {
+  /* #swagger.tags = ['Fuel']
+  #swagger.description = 'Get orphaned fuel records' */
+  try {
+    const vehicles = await prisma.vehicle.findMany({
+      select: { plate: true }
+    });
+    const plates = vehicles.map(v => v.plate);
+    const orphanedFuels = await prisma.fuel.findMany({
+      where: {
+        plate: {
+          notIn: plates
+        }
+      },
+      orderBy: { date: 'desc' }
+    });
+    res.json(orphanedFuels);
+  } catch (error) {
+    // Envia uma resposta de erro mais informativa
+    console.error("Error fetching orphaned fuels:", error); // Log do erro no servidor para debug
+    res.status(500).json({ 
+      message: "An error occurred while fetching orphaned fuels.",
+      error: error.message 
+    });
+  }
+}
+
+
 export {
   createFuel,
   getAllFuels,
   getFuelById,
   updateFuel,
   deleteFuel,
-  getFuelByPlate
+  getFuelByPlate,
+  getOrphanedFuels
 }; 

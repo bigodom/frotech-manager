@@ -8,6 +8,7 @@ import Alerts from "./pages/Alerts";
 import MaintenancePage from "./pages/Maintenance";
 import Fuel from "./pages/Fuel";
 import VehicleAnalysis from "./pages/VehicleAnalysis"
+import OrphanFuel from "./pages/OrphanFuel";
 
 const AppRoutes = () => {
   return (
@@ -21,6 +22,7 @@ const AppRoutes = () => {
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/maintenance" element={<MaintenancePage/>} />
           <Route path="/fuel" element={<Fuel />} />
+          <Route path="/orphanfuel" element={<OrphanFuel />} />
           <Route path="/reports" element={<div>Relatórios</div>} />
           <Route path="/settings" element={<div>Configurações</div>} />
           <Route path="/vehicles/analysis/:plate" element={<VehicleAnalysis />} />

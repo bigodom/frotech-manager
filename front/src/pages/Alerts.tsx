@@ -41,7 +41,7 @@ export default function Alerts() {
     type: "",
     description: "",
     value: undefined,
-    dueDate: "",
+    doneDate: "",
     kmAlert: 0,
     isCompleted: false,
     priority: "medium",
@@ -58,7 +58,7 @@ export default function Alerts() {
       type: formData.type === "other" ? customType : formData.type,
       description: formData.description,
       value: formData.value ? Number(formData.value) : undefined,
-      dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+      doneDate: formData.doneDate ? new Date(formData.doneDate) : undefined,
       kmAlert: Number(formData.kmAlert),
       isCompleted: false,
       createdAt: new Date(),
@@ -70,7 +70,7 @@ export default function Alerts() {
       type: "",
       description: "",
       value: undefined,
-      dueDate: "",
+      doneDate: "",
       kmAlert: 0,
       isCompleted: false,
       priority: "medium",
@@ -212,7 +212,7 @@ export default function Alerts() {
                     id="dueDate"
                     name="dueDate"
                     type="date"
-                    value={formData.dueDate}
+                    value={formData.doneDate}
                     onChange={handleChange}
                     required
                   />
@@ -295,7 +295,7 @@ export default function Alerts() {
                     <TableCell>{alert.type}</TableCell>
                     <TableCell>{alert.vehicleId}</TableCell>
                     <TableCell>{alert.description}</TableCell>
-                    <TableCell>{alert.dueDate ? new Date(alert.dueDate).toLocaleDateString('pt-BR') : '-'}</TableCell>
+                    <TableCell>{alert.doneDate ? new Date(alert.doneDate).toLocaleDateString('pt-BR') : '-'}</TableCell>
                     <TableCell>{alert.kmAlert}</TableCell>
                     <TableCell>{alert.isCompleted ? 'Sim' : 'Não'}</TableCell>
                     <TableCell>{new Date(alert.createdAt).toLocaleDateString('pt-BR')}</TableCell>

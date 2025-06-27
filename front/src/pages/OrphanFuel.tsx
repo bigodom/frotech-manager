@@ -12,7 +12,7 @@ import api from "@/services/useApi"
 import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
 
-export default function Fuel() {
+export default function OrphanFuel() {
   const [fuels, setFuels] = useState<Fuel[]>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedFuel, setSelectedFuel] = useState<Fuel | null>(null)
@@ -58,7 +58,7 @@ export default function Fuel() {
       await fetchFuels()
       setIsEditOpen(false)
       setSelectedFuel(null)
-      toast.success("Abastecimento atualizado com sucesso!")
+      toast.success("Abastecimento atualizado com sucesso!" + ` Placa: ${selectedFuel.plate}`)
     } catch (error) {
       console.error("Erro ao atualizar abastecimento:", error)
     }
@@ -66,9 +66,6 @@ export default function Fuel() {
 
   const handleDeleteFuel = async () => {
     if (!selectedFuel) return
-    if (!window.confirm("Você tem certeza que deseja excluir este abastecimento?")) {
-      return
-    }
       try {
         await api.delete(`/fuel/${selectedFuel.id}`)
         await fetchFuels()
@@ -82,7 +79,7 @@ export default function Fuel() {
 
   const fetchFuels = async () => {
     try {
-      const response = await api.get("/fuel")
+      const response = await api.get("/orphaned")
       const sortedFuels = response.data.sort((a: Fuel, b: Fuel) => 
         new Date(b.date).getTime() - new Date(a.date).getTime()
       )
@@ -121,12 +118,13 @@ export default function Fuel() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Abastecimentos</h1>
+        <h1 className="text-3xl font-bold">Abastecimentos Órfãos</h1>
         <Button onClick={() => setIsFormOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Abastecimento
         </Button>
       </div>
+        <h2 className="text-2xl">Abastecimentos que não possuem veículos cadastrados</h2>
 
       {isFormOpen && (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -166,7 +164,7 @@ export default function Fuel() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="quantity">Quantidade (L) *</Label>
-                  <Input id="quantity" name="quantity" type="number" step="0.001" required />
+                  <Input id="quantity" name="quantity" type="number" step="0.01" required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="unitCost">Custo Unitário (R$) *</Label>
@@ -245,16 +243,6 @@ export default function Fuel() {
                               }}
                             >
                               Editar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedFuel(fuel)
-                                handleDeleteFuel()
-                              }}
-                            >
-                              Excluir
                             </Button>
                           </div>
                         </TableCell>

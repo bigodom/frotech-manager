@@ -44,8 +44,8 @@ model Vehicle {
   utility           String?
   classification    Int?
   registration      String
-  chassi            String?  @unique
-  renavam           String?  @unique
+  chassi            String?
+  renavam           String?
   fleet             Int?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -116,4 +116,5 @@ model Tire {
   size      String?
   pressure  Float?
   mileage   Float?
+  
 }
