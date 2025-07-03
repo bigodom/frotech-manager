@@ -31,8 +31,8 @@ model Driver {
 }
 
 model Vehicle {
-  id                Int      @id @default(autoincrement())
-  plate             String   @unique
+  id                Int           @id @default(autoincrement())
+  plate             String        @unique
   model             String
   type              String
   manufacturingYear Int?
@@ -47,10 +47,11 @@ model Vehicle {
   chassi            String?
   renavam           String?
   fleet             Int?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
   Alerts            Alerts[]
   Tire              Tire[]
+  VehicleTire       VehicleTire[]
 
   @@map("vehicles")
 }
@@ -107,14 +108,43 @@ model Alerts {
 }
 
 model Tire {
-  id        Int      @id
-  vehicleId Int?
-  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
-  position  String?
-  brand     String
-  model     String?
-  size      String?
-  pressure  Float?
-  mileage   Float?
-  
+  id            Int       @id @default(autoincrement())
+  fireId        String    @unique
+  retreadNumber Int       @default(0)
+  grooveDepth   Float?
+  purchaseDate  DateTime?
+  brand         String
+  model         String?
+  measure       String?
+  value         Float?
+  currentKm     Float?
+  status        String    @default("IN_STOCK") // Status: IN_STOCK, IN_USE, DISCARDED
+  pressure      Float?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  VehicleTire VehicleTire[]
+  Vehicle     Vehicle?      @relation(fields: [vehicleId], references: [id])
+  vehicleId   Int?
+}
+
+model VehicleTire {
+  id     Int  @id @default(autoincrement())
+  tireId Int
+  tire   Tire @relation(fields: [tireId], references: [id])
+
+  vehicleId Int
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+
+  axlePosition String
+  mountKm      Int // KM do veículo no momento da montagem
+
+  mountDate   DateTime  @default(now()) // Data da montagem
+  unmountDate DateTime? // Data da desmontagem (opcional)
+  unmountKm   Int? // KM do veículo no momento da desmontagem (opcional)
+
+  observation String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
