@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import * as XLSX from "xlsx"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -95,15 +96,28 @@ export default function Vehicles() {
     if (!file) return
 
     try {
-      const text = await file.text()
-      const lines = text.split("\n")
-      // Remove a primeira linha (cabeçalho) e linhas vazias
-      const updates = lines
-        .slice(1) // Remove a primeira linha
-        .filter(line => line.trim()) // Remove linhas vazias
-        .map(line => {
-          const [plate, mileage] = line.split(";").map(item => item.trim())
-          return { plate, mileage: parseFloat(mileage) }
+      // Lê o arquivo XLSX
+      const data = await file.arrayBuffer()
+      const workbook = XLSX.read(data, { type: "array" })
+      // Seleciona a primeira planilha
+      const firstSheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[firstSheetName]
+      // Converte para array de objetos, usando ";" como separador
+      const rows: any[] = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        raw: false,
+        defval: "",
+      })
+      if (!rows || rows.length < 2) throw new Error("Planilha vazia ou sem dados.")
+      // Remove cabeçalho e linhas vazias
+      // Coluna D = index 3 (placa), coluna E = index 4 (quilometragem)
+      const updates = rows
+        .slice(1)
+        .filter((row: any) => row && row.length > 4 && row[3])
+        .map((row: any) => {
+          const plate = (row[3] || "").toString().trim()
+          const mileage = parseFloat((row[4] || "").toString().replace(",", "."))
+          return { plate, mileage }
         })
         .filter(update => update.plate && !isNaN(update.mileage))
 
@@ -111,7 +125,7 @@ export default function Vehicles() {
       setBatchResults(response.data)
       await fetchVehicles()
     } catch (error) {
-      console.error("Erro ao processar arquivo CSV:", error)
+      console.error("Erro ao processar arquivo XLSX:", error)
     }
   }
 
@@ -209,19 +223,20 @@ export default function Vehicles() {
                 {isBatchUpdate ? (
                   <form onSubmit={handleBatchMileageUpdate} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="csvFile">Arquivo CSV</Label>
+                      <Label htmlFor="csvFile">Arquivo XLSX</Label>
                       <p className="text-sm text-gray-500">
-                        O arquivo deve conter uma placa e quilometragem por linha, separados por ponto e vírgula (;).
-                        A primeira linha deve ser o cabeçalho.
-                        Exemplo:
-                        Placa;Quilometragem
+                        O arquivo deve ser uma planilha Excel (.xlsx) com a primeira linha como cabeçalho.<br/>
+                        A primeira planilha será usada.<br/>
+                        As colunas devem ser: Placa e Quilometragem, ou uma coluna única separada por ponto e vírgula (;).<br/>
+                        Exemplo:<br/>
+                        Placa;Quilometragem<br/>
                         ABC1234;50000
                       </p>
                       <Input
                         id="csvFile"
                         name="csvFile"
                         type="file"
-                        accept=".csv"
+                        accept=".xlsx"
                         required
                       />
                     </div>

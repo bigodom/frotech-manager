@@ -9,6 +9,7 @@ import MaintenancePage from "./pages/Maintenance";
 import Fuel from "./pages/Fuel";
 import VehicleAnalysis from "./pages/VehicleAnalysis"
 import OrphanFuel from "./pages/OrphanFuel";
+import TireAllocation from "./pages/TireAllocation";
 
 const AppRoutes = () => {
   return (
@@ -26,6 +27,7 @@ const AppRoutes = () => {
           <Route path="/reports" element={<div>Relatórios</div>} />
           <Route path="/settings" element={<div>Configurações</div>} />
           <Route path="/vehicles/analysis/:plate" element={<VehicleAnalysis />} />
+          <Route path="/tire/aloc" element={<TireAllocation />} />
         </Route>
       </Routes>
     </BrowserRouter>

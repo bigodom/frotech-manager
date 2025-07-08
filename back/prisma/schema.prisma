@@ -109,7 +109,7 @@ model Alerts {
 
 model Tire {
   id            Int       @id @default(autoincrement())
-  fireId        String    @unique
+  fireId        Int       @unique
   retreadNumber Int       @default(0)
   grooveDepth   Float?
   purchaseDate  DateTime?

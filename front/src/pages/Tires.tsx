@@ -1,95 +1,80 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Plus } from "lucide-react"
-
-interface Tire {
-  id: string
-  brand: string
-  model: string
-  size: string
-  dot: string
-  position: string
-  vehicleId: string
-  status: string
-  treadDepth: number
-  purchaseDate: string
-}
+import type { Tire, CreateTireDTO } from "@/lib/types/Tire"
+import api from "@/services/useApi"
 
 export default function Tires() {
   const [tires, setTires] = useState<Tire[]>([])
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreateTireDTO>({
+    fireId: 0,
+    retreadNumber: 0,
+    grooveDepth: 0,
+    purchaseDate: new Date(),
     brand: "",
     model: "",
-    size: "",
-    dot: "",
-    position: "",
-    vehicleId: "",
-    status: "new",
-    treadDepth: "",
-    purchaseDate: ""
+    measure: "",
+    value: 0,
+    currentKm: 0
   })
+  const [selectedTire, setSelectedTire] = useState<Tire | null>(null)
+  const [isViewOpen, setIsViewOpen] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editTireData, setEditTireData] = useState<Tire | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const newTire: Tire = {
-      id: crypto.randomUUID(),
-      ...formData,
-      treadDepth: parseFloat(formData.treadDepth)
+  const handleNeuTire = async (data: CreateTireDTO) => {
+    try {
+      const response = await api.post('/tire', data)
+      setTires(prev => [...prev, response.data])
+      setIsFormOpen(false)
+      setFormData({
+        fireId: 0,
+        retreadNumber: 0,
+        grooveDepth: 0,
+        purchaseDate: new Date(),
+        brand: "",
+        model: "",
+        measure: "",
+        value: 0,
+        currentKm: 0
+      })
     }
-    setTires([...tires, newTire])
-    setFormData({
-      brand: "",
-      model: "",
-      size: "",
-      dot: "",
-      position: "",
-      vehicleId: "",
-      status: "new",
-      treadDepth: "",
-      purchaseDate: ""
-    })
-    setIsFormOpen(false)
+    catch (error) {
+      console.error('Erro ao cadastrar pneu:', error)
+      alert('Erro ao cadastrar pneu. Tente novamente mais tarde.')
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
+    const { name, value, type } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === "number" ? Number(value) : value
     }))
   }
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+  const fetchTires = async () => {
+    try {
+      const response = await api.get('/tire')
+      setTires(response.data)
+    } catch (error) {
+      console.error('Erro ao buscar pneus:', error)
+      alert('Erro ao carregar pneus. Tente novamente mais tarde.')
+    }
   }
+
+  useEffect(() => {
+    fetchTires()
+  }, [])
+
+  // Não há selects customizados neste cadastro
+
 
   return (
     <div className="space-y-6">
@@ -101,147 +86,162 @@ export default function Tires() {
         </Button>
       </div>
 
-      {isFormOpen && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Cadastrar Novo Pneu</CardTitle>
+      {/* Modal de cadastro */}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Cadastrar Novo Pneu</DialogTitle>
             <CardDescription>
               Preencha os dados do pneu para cadastrá-lo na frota.
             </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          </DialogHeader>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              await handleNeuTire(formData);
+            }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-2 gap-4">
+              {/* ...campos do formulário, igual já está... */}
+              <div className="space-y-2">
+                <Label htmlFor="fireId">ID de Fogo *</Label>
+                <Input id="fireId" name="fireId" type="number" value={formData.fireId} onChange={handleChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="retreadNumber">Nº de Recapagens</Label>
+                <Input id="retreadNumber" name="retreadNumber" type="number" value={formData.retreadNumber} onChange={handleChange} min={0} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="grooveDepth">Sulco (mm)</Label>
+                <Input id="grooveDepth" name="grooveDepth" type="number" step="0.1" value={formData.grooveDepth} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="purchaseDate">Data de Compra</Label>
+                <Input id="purchaseDate" name="purchaseDate" type="date" value={typeof formData.purchaseDate === 'string' ? formData.purchaseDate : formData.purchaseDate.toISOString().split('T')[0]} onChange={handleChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="brand">Marca *</Label>
+                <Input id="brand" name="brand" value={formData.brand} onChange={handleChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="model">Modelo</Label>
+                <Input id="model" name="model" value={formData.model} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="measure">Medida</Label>
+                <Input id="measure" name="measure" value={formData.measure} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="value">Valor (R$)</Label>
+                <Input id="value" name="value" type="number" step="0.01" value={formData.value} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="currentKm">KM Atual</Label>
+                <Input id="currentKm" name="currentKm" type="number" value={formData.currentKm} onChange={handleChange} />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">Salvar</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de visualização/edição */}
+      <Dialog open={isViewOpen} onOpenChange={(open) => {
+        setIsViewOpen(open);
+        if (!open) {
+          setIsEditMode(false);
+          setSelectedTire(null);
+          setEditTireData(null);
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Pneu</DialogTitle>
+          </DialogHeader>
+          {selectedTire && !isEditMode ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>ID de Fogo</Label><p>{selectedTire.fireId}</p></div>
+                <div><Label>Marca</Label><p>{selectedTire.brand}</p></div>
+                <div><Label>Modelo</Label><p>{selectedTire.model}</p></div>
+                <div><Label>Medida</Label><p>{selectedTire.measure}</p></div>
+                <div><Label>Recapagens</Label><p>{selectedTire.retreadNumber}</p></div>
+                <div><Label>Sulco (mm)</Label><p>{selectedTire.grooveDepth}</p></div>
+                <div><Label>Valor (R$)</Label><p>{selectedTire.value}</p></div>
+                <div><Label>KM Atual</Label><p>{selectedTire.currentKm}</p></div>
+                <div><Label>Data Compra</Label><p>{selectedTire.purchaseDate instanceof Date ? selectedTire.purchaseDate.toLocaleDateString() : new Date(selectedTire.purchaseDate).toLocaleDateString()}</p></div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button onClick={() => {
+                  setIsEditMode(true);
+                  setEditTireData(selectedTire);
+                }}>Editar</Button>
+                <Button type="button" variant="outline" onClick={() => setIsViewOpen(false)}>Fechar</Button>
+              </div>
+            </div>
+          ) : selectedTire && isEditMode && editTireData ? (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                // Aqui você pode fazer o update na API se desejar
+                setTires(prev => prev.map(t => t.id === editTireData.id ? editTireData : t));
+                setIsEditMode(false);
+                setIsViewOpen(false);
+              }}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="brand">Marca</Label>
-                  <Input
-                    id="brand"
-                    name="brand"
-                    value={formData.brand}
-                    onChange={handleChange}
-                    placeholder="Ex: Michelin"
-                    required
-                  />
+                  <Label htmlFor="edit-fireId">ID de Fogo *</Label>
+                  <Input id="edit-fireId" name="fireId" type="number" value={editTireData.fireId} onChange={e => setEditTireData(prev => prev ? { ...prev, fireId: Number(e.target.value) } : null)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="model">Modelo</Label>
-                  <Input
-                    id="model"
-                    name="model"
-                    value={formData.model}
-                    onChange={handleChange}
-                    placeholder="Ex: XPS Traction"
-                    required
-                  />
+                  <Label htmlFor="edit-retreadNumber">Nº de Recapagens</Label>
+                  <Input id="edit-retreadNumber" name="retreadNumber" type="number" value={editTireData.retreadNumber} onChange={e => setEditTireData(prev => prev ? { ...prev, retreadNumber: Number(e.target.value) } : null)} min={0} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="size">Dimensão</Label>
-                  <Input
-                    id="size"
-                    name="size"
-                    value={formData.size}
-                    onChange={handleChange}
-                    placeholder="Ex: 205/55R16"
-                    required
-                  />
+                  <Label htmlFor="edit-grooveDepth">Sulco (mm)</Label>
+                  <Input id="edit-grooveDepth" name="grooveDepth" type="number" step="0.1" value={editTireData.grooveDepth} onChange={e => setEditTireData(prev => prev ? { ...prev, grooveDepth: Number(e.target.value) } : null)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dot">DOT</Label>
-                  <Input
-                    id="dot"
-                    name="dot"
-                    value={formData.dot}
-                    onChange={handleChange}
-                    placeholder="Ex: 4T1X"
-                    required
-                  />
+                  <Label htmlFor="edit-purchaseDate">Data de Compra</Label>
+                  <Input id="edit-purchaseDate" name="purchaseDate" type="date" value={typeof editTireData.purchaseDate === 'string' ? editTireData.purchaseDate : editTireData.purchaseDate.toISOString().split('T')[0]} onChange={e => setEditTireData(prev => prev ? { ...prev, purchaseDate: e.target.value } : null)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="position">Posição</Label>
-                  <Select
-                    value={formData.position}
-                    onValueChange={(value) => handleSelectChange("position", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a posição" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="front_left">Dianteira Esquerda</SelectItem>
-                      <SelectItem value="front_right">Dianteira Direita</SelectItem>
-                      <SelectItem value="rear_left">Traseira Esquerda</SelectItem>
-                      <SelectItem value="rear_right">Traseira Direita</SelectItem>
-                      <SelectItem value="spare">Estepe</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="edit-brand">Marca *</Label>
+                  <Input id="edit-brand" name="brand" value={editTireData.brand} onChange={e => setEditTireData(prev => prev ? { ...prev, brand: e.target.value } : null)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="vehicleId">Veículo</Label>
-                  <Input
-                    id="vehicleId"
-                    name="vehicleId"
-                    value={formData.vehicleId}
-                    onChange={handleChange}
-                    placeholder="Ex: ABC-1234"
-                    required
-                  />
+                  <Label htmlFor="edit-model">Modelo</Label>
+                  <Input id="edit-model" name="model" value={editTireData.model} onChange={e => setEditTireData(prev => prev ? { ...prev, model: e.target.value } : null)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="treadDepth">Profundidade da Banda (mm)</Label>
-                  <Input
-                    id="treadDepth"
-                    name="treadDepth"
-                    type="number"
-                    step="0.1"
-                    value={formData.treadDepth}
-                    onChange={handleChange}
-                    placeholder="Ex: 7.5"
-                    required
-                  />
+                  <Label htmlFor="edit-measure">Medida</Label>
+                  <Input id="edit-measure" name="measure" value={editTireData.measure} onChange={e => setEditTireData(prev => prev ? { ...prev, measure: e.target.value } : null)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="purchaseDate">Data de Compra</Label>
-                  <Input
-                    id="purchaseDate"
-                    name="purchaseDate"
-                    type="date"
-                    value={formData.purchaseDate}
-                    onChange={handleChange}
-                    required
-                  />
+                  <Label htmlFor="edit-value">Valor (R$)</Label>
+                  <Input id="edit-value" name="value" type="number" step="0.01" value={editTireData.value} onChange={e => setEditTireData(prev => prev ? { ...prev, value: Number(e.target.value) } : null)} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => handleSelectChange("status", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new">Novo</SelectItem>
-                      <SelectItem value="in_use">Em Uso</SelectItem>
-                      <SelectItem value="worn">Desgastado</SelectItem>
-                      <SelectItem value="damaged">Danificado</SelectItem>
-                      <SelectItem value="scrapped">Inutilizado</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="edit-currentKm">KM Atual</Label>
+                  <Input id="edit-currentKm" name="currentKm" type="number" value={editTireData.currentKm} onChange={e => setEditTireData(prev => prev ? { ...prev, currentKm: Number(e.target.value) } : null)} />
                 </div>
               </div>
               <div className="flex justify-end space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsFormOpen(false)}
-                >
-                  Cancelar
-                </Button>
+                <Button type="button" variant="outline" onClick={() => setIsEditMode(false)}>Cancelar</Button>
                 <Button type="submit">Salvar</Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-      )}
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -254,46 +254,36 @@ export default function Tires() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID Fogo</TableHead>
                 <TableHead>Marca</TableHead>
                 <TableHead>Modelo</TableHead>
-                <TableHead>Dimensão</TableHead>
-                <TableHead>DOT</TableHead>
-                <TableHead>Posição</TableHead>
-                <TableHead>Veículo</TableHead>
-                <TableHead>Banda (mm)</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Medida</TableHead>
+                <TableHead>Recapagens</TableHead>
+                <TableHead>Sulco (mm)</TableHead>
+                <TableHead>Valor (R$)</TableHead>
+                <TableHead>KM Atual</TableHead>
+                <TableHead>Data Compra</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {tires.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center">
+                  <TableCell colSpan={9} className="text-center">
                     Nenhum pneu cadastrado
                   </TableCell>
                 </TableRow>
               ) : (
                 tires.map((tire) => (
-                  <TableRow key={tire.id}>
+                  <TableRow key={tire.id} className="cursor-pointer hover:bg-gray-100" onClick={() => { setSelectedTire(tire); setIsViewOpen(true); }}>
+                    <TableCell>{tire.fireId}</TableCell>
                     <TableCell>{tire.brand}</TableCell>
                     <TableCell>{tire.model}</TableCell>
-                    <TableCell>{tire.size}</TableCell>
-                    <TableCell>{tire.dot}</TableCell>
-                    <TableCell>
-                      {tire.position === "front_left" && "Dianteira Esquerda"}
-                      {tire.position === "front_right" && "Dianteira Direita"}
-                      {tire.position === "rear_left" && "Traseira Esquerda"}
-                      {tire.position === "rear_right" && "Traseira Direita"}
-                      {tire.position === "spare" && "Estepe"}
-                    </TableCell>
-                    <TableCell>{tire.vehicleId}</TableCell>
-                    <TableCell>{tire.treadDepth}</TableCell>
-                    <TableCell>
-                      {tire.status === "new" && "Novo"}
-                      {tire.status === "in_use" && "Em Uso"}
-                      {tire.status === "worn" && "Desgastado"}
-                      {tire.status === "damaged" && "Danificado"}
-                      {tire.status === "scrapped" && "Inutilizado"}
-                    </TableCell>
+                    <TableCell>{tire.measure}</TableCell>
+                    <TableCell>{tire.retreadNumber}</TableCell>
+                    <TableCell>{tire.grooveDepth}</TableCell>
+                    <TableCell>{tire.value}</TableCell>
+                    <TableCell>{tire.currentKm}</TableCell>
+                    <TableCell>{tire.purchaseDate instanceof Date ? tire.purchaseDate.toLocaleDateString() : new Date(tire.purchaseDate).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))
               )}
@@ -303,4 +293,4 @@ export default function Tires() {
       </Card>
     </div>
   )
-} 
+}
