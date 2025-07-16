@@ -1,5 +1,4 @@
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient()
+import prisma from '../services/databaseClient.js';
 
 const createMaintenance = async (req, res) => {
   /* #swagger.tags = ['Maintenance']
@@ -43,6 +42,9 @@ const getMaintenances = async (req, res) => {
     const maintenances = await prisma.maintenance.findMany({
       orderBy: {
         date: 'desc'
+      },
+      include: {
+        Review: true
       }
     })
     res.json(maintenances)
@@ -73,10 +75,7 @@ const getMaintenanceById = async (req, res) => {
   #swagger.description = 'Get maintenance by ID' */
   try {
     const maintenance = await prisma.maintenance.findUnique({
-      where: { id: parseInt(req.params.id) },
-      include: {
-        vehicle: true
-      }
+      where: { id: parseInt(req.params.id) }
     })
     if (!maintenance) {
       return res.status(404).json({ error: 'Manutenção não encontrada' })
@@ -88,6 +87,27 @@ const getMaintenanceById = async (req, res) => {
   }
 }
 
+const getMaintenancesByInvoiceId = async (req, res) => {
+  /* #swagger.tags = ['Maintenance']
+  #swagger.description = 'Get maintenances by invoice ID' */
+  try {
+    const { invoiceId } = req.params
+    const maintenances = await prisma.maintenance.findMany({
+      where: { invoiceId: parseInt(invoiceId) },
+      orderBy: { date: 'desc' }
+    })
+    if (maintenances.length === 0) {
+      return res.status(404).json({
+        error: 'Nenhuma manutenção encontrada para este ID de nota'
+      })
+    }
+    res.json(maintenances)
+  } catch (error) {
+    console.error('Erro ao buscar manutenções por ID de nota:', error)
+    res.status(500).json({ error: 'Erro ao buscar manutenções por ID de nota' })
+  }
+}
+
 const updateMaintenance = async (req, res) => {
   /* #swagger.tags = ['Maintenance']
   #swagger.description = 'Update maintenance' */
@@ -95,9 +115,6 @@ const updateMaintenance = async (req, res) => {
     const maintenance = await prisma.maintenance.update({
       where: { id: parseInt(req.params.id) },
       data: req.body,
-      include: {
-        vehicle: true
-      }
     })
     res.json(maintenance)
   } catch (error) {
@@ -107,18 +124,66 @@ const updateMaintenance = async (req, res) => {
 }
 
 const deleteMaintenance = async (req, res) => {
-  /* #swagger.tags = ['Maintenance']
-  #swagger.description = 'Delete maintenance' */
   try {
+    const maintenanceId = parseInt(req.params.id);
+
+    // Exclui Review associada, se existir
+    await prisma.review.deleteMany({
+      where: { maintenanceId }
+    });
+
+    // Agora pode excluir a manutenção
     await prisma.maintenance.delete({
-      where: { id: parseInt(req.params.id) }
-    })
-    res.json({ message: 'Manutenção excluída com sucesso' })
+      where: { id: maintenanceId }
+    });
+
+    res.json({ message: 'Manutenção excluída com sucesso' });
   } catch (error) {
-    console.error('Erro ao excluir manutenção:', error)
-    res.status(500).json({ error: 'Erro ao excluir manutenção' })
+    console.error('Erro ao excluir manutenção:', error);
+    res.status(500).json({ error: 'Erro ao excluir manutenção' });
+  }
+};
+
+const getMaintenanceWithReview = async (req, res) => {
+  /* #swagger.tags = ['Maintenance']
+  #swagger.description = 'Get maintenances with reviews' */
+  try {
+    const maintenances = await prisma.maintenance.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: {
+        Review: true
+      }
+    })
+    if (!maintenances) {
+      return res.status(404).json({ error: 'Manutenção não encontrada' })
+    }
+    res.json(maintenances)
+  } catch (error) {
+    console.error('Erro ao buscar manutenção com revisão:', error)
+    res.status(500).json({ error: 'Erro ao buscar manutenção com revisão' })
   }
 }
+
+const getAllMaintenancesWithReviews = async (req, res) => {
+  /* #swagger.tags = ['Maintenance']
+  #swagger.description = 'Get all maintenances with reviews' */
+  try {
+    const maintenances = await prisma.maintenance.findMany({
+      include: {
+        Review: true
+      },
+      orderBy: {
+        date: 'desc'
+      }
+    })
+    res.json(maintenances)
+  } catch (error) {
+    console.error('Erro ao buscar manutenções com revisões:', error)
+    res.status(500).json({
+      error: 'Erro ao buscar manutenções com revisões' })
+  }
+}
+
 
 export {
   createMaintenance,
@@ -126,5 +191,8 @@ export {
   getMaintenanceById,
   updateMaintenance,
   deleteMaintenance,
-  getMaintenancesByPlate
+  getMaintenancesByPlate,
+  getMaintenancesByInvoiceId,
+  getMaintenanceWithReview,
+  getAllMaintenancesWithReviews
 } 

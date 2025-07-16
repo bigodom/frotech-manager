@@ -6,6 +6,7 @@ import Drivers from "./pages/Drivers";
 import Tires from "./pages/Tires";
 import Alerts from "./pages/Alerts";
 import MaintenancePage from "./pages/Maintenance";
+import InvoicePage from "./pages/Maintenance/InvoicePage";
 import Fuel from "./pages/Fuel";
 import VehicleAnalysis from "./pages/VehicleAnalysis"
 import OrphanFuel from "./pages/OrphanFuel";
@@ -27,11 +28,13 @@ const AppRoutes = () => {
           <Route path="/reports" element={<div>Relatórios</div>} />
           <Route path="/settings" element={<div>Configurações</div>} />
           <Route path="/vehicles/analysis/:plate" element={<VehicleAnalysis />} />
-          <Route path="/tire/aloc" element={<TireAllocation />} />
+          <Route path="/alocar" element={<TireAllocation />} />
+          <Route path="/maintenance/invoice/:invoiceId" element={<InvoicePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
   );
 };
+
 
 export default AppRoutes;

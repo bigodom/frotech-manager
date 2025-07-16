@@ -1,3 +1,12 @@
+export type Review = {
+    id: number;
+    maintenanceId: number;
+    type: string;
+    currentKm: number;
+    nextReviewKm: number;
+    createdAt: Date;
+};
+
 export type Maintenance = {
     id: number;
     invoiceDate: Date;
@@ -11,6 +20,7 @@ export type Maintenance = {
     totalCost: number;
     createdAt: Date;
     updatedAt: Date;
+    Review?: Review;
 }
 
 export type CreateMaintenanceDTO = Omit<Maintenance, 'id' | 'createdAt' | 'updatedAt'>;

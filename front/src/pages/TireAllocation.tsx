@@ -1,6 +1,7 @@
 // front/src/pages/TireAllocation.tsx
 
 import { useState, useEffect } from 'react';
+import { vehicleTirePositions } from '@/lib/VehiclesTires';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -8,20 +9,18 @@ import api from '@/services/useApi';
 import type { Vehicle } from '@/lib/types/Vehicle';
 import type { Tire } from '@/lib/types/Tire';
 
-// Posições dos eixos do veículo
-const axlePositions = [
-  'dianteiro_esquerdo', 'dianteiro_direito',
-  'traseiro_esquerdo_interno', 'traseiro_esquerdo_externo',
-  'traseiro_direito_interno', 'traseiro_direito_externo',
-  'estepe_1', 'estepe_2'
-];
+
+type VehicleType = keyof typeof vehicleTirePositions;
+const vehicleTypes: VehicleType[] = Object.keys(vehicleTirePositions) as VehicleType[];
+
 
 export default function TireAllocation() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [availableTires, setAvailableTires] = useState<Tire[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+  const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('truck');
   const [allocatedTires, setAllocatedTires] = useState<Record<string, Tire | null>>(
-    axlePositions.reduce((acc, pos) => ({ ...acc, [pos]: null }), {})
+    vehicleTirePositions['truck'].reduce((acc, pos) => ({ ...acc, [pos]: null }), {} as Record<string, Tire | null>)
   );
 
   useEffect(() => {
@@ -32,10 +31,20 @@ export default function TireAllocation() {
     // NOTA: O ideal seria ter um endpoint `/tire/available` no backend.
     // Por enquanto, estamos buscando todos e filtrando.
     api.get('/tire').then(response => {
-        // TODO: Adicionar lógica para filtrar pneus já alocados
-        setAvailableTires(response.data);
+      // TODO: Adicionar lógica para filtrar pneus já alocados
+      setAvailableTires(response.data);
     });
   }, []);
+
+  // Atualiza o diagrama e as posições dos pneus ao trocar o tipo de veículo
+  useEffect(() => {
+    setAllocatedTires(
+      vehicleTirePositions[selectedVehicleType].reduce(
+        (acc, pos) => ({ ...acc, [pos]: null }),
+        {} as Record<string, Tire | null>
+      )
+    );
+  }, [selectedVehicleType]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, tire: Tire) => {
     e.dataTransfer.setData('tireId', tire.id.toString());
@@ -80,18 +89,17 @@ export default function TireAllocation() {
           pneuId: tire!.id,
           posicao: position,
           dataMontagem: new Date().toISOString(),
-          // Você pode adicionar um formulário para pegar o KM
           kmMontagem: vehicles.find(v => v.id.toString() === selectedVehicleId)?.mileage || 0, 
         };
-        // Usando o endpoint que criamos anteriormente
         return api.post('/vehicletire', payload);
       });
 
     Promise.all(allocationPromises)
       .then(() => {
         alert('Alocação salva com sucesso!');
-        // Limpar o estado após salvar
-        setAllocatedTires(axlePositions.reduce((acc, pos) => ({ ...acc, [pos]: null }), {}));
+        setAllocatedTires(
+          vehicleTirePositions[selectedVehicleType].reduce((acc, pos) => ({ ...acc, [pos]: null }), {} as Record<string, Tire | null>)
+        );
       })
       .catch(error => {
         console.error("Erro ao salvar alocação:", error);
@@ -130,7 +138,7 @@ export default function TireAllocation() {
              </button>
            </div>
         ) : (
-          <span className="text-xs text-gray-400 capitalize">{position.replace(/_/g, ' ')}</span>
+          <span className="text-xs text-gray-400 uppercase">{position}</span>
         )}
       </div>
     );
@@ -143,20 +151,35 @@ export default function TireAllocation() {
         <Button onClick={handleSaveAllocation} disabled={!selectedVehicleId}>Salvar Alocação</Button>
       </div>
 
-      <div className="w-1/3">
-        <label className="text-sm font-medium">Selecione um Veículo</label>
-        <Select onValueChange={setSelectedVehicleId} value={selectedVehicleId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione um veículo..." />
-          </SelectTrigger>
-          <SelectContent>
-            {vehicles.map(vehicle => (
-              <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
-                {vehicle.plate} - {vehicle.model}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex gap-4">
+        <div className="w-1/3">
+          <label className="text-sm font-medium">Selecione um Veículo</label>
+          <Select onValueChange={setSelectedVehicleId} value={selectedVehicleId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione um veículo..." />
+            </SelectTrigger>
+            <SelectContent>
+              {vehicles.map(vehicle => (
+                <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
+                  {vehicle.plate} - {vehicle.model}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-1/3">
+          <label className="text-sm font-medium">Tipo de Veículo</label>
+          <Select onValueChange={v => setSelectedVehicleType(v as VehicleType)} value={selectedVehicleType}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o tipo..." />
+            </SelectTrigger>
+            <SelectContent>
+              {vehicleTypes.map(type => (
+                <SelectItem key={type} value={type}>{type.toUpperCase()}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -175,30 +198,12 @@ export default function TireAllocation() {
 
         <div className="lg:col-span-2">
           <Card>
-            <CardHeader><CardTitle>Diagrama do Veículo (Truck)</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Diagrama do Veículo ({selectedVehicleType.toUpperCase()})</CardTitle></CardHeader>
             <CardContent>
-              <div className="bg-gray-200 p-4 rounded-lg">
-                {/* Eixo Dianteiro */}
-                <div className="flex justify-between mb-8">
-                  <TireSlot position="dianteiro_esquerdo" />
-                  <TireSlot position="dianteiro_direito" />
-                </div>
-
-                {/* Eixos Traseiros */}
-                <div className="flex justify-between mb-4">
-                  <TireSlot position="traseiro_esquerdo_externo" />
-                  <TireSlot position="traseiro_direito_externo" />
-                </div>
-                <div className="flex justify-between">
-                  <TireSlot position="traseiro_esquerdo_interno" />
-                  <TireSlot position="traseiro_direito_interno" />
-                </div>
-                
-                {/* Estepes */}
-                <div className="flex justify-center gap-4 mt-8 pt-4 border-t">
-                    <TireSlot position="estepe_1" />
-                    <TireSlot position="estepe_2" />
-                </div>
+              <div className="bg-gray-200 p-4 rounded-lg flex flex-wrap gap-4">
+                {vehicleTirePositions[selectedVehicleType].map(position => (
+                  <TireSlot key={position} position={position} />
+                ))}
               </div>
             </CardContent>
           </Card>

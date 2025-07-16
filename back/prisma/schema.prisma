@@ -69,8 +69,20 @@ model Maintenance {
   totalCost   Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  Review      Review[]
 
   @@map("maintenances")
+}
+
+model Review {
+  id            Int      @id @default(autoincrement())
+  maintenanceId Int      @unique
+  type          String // Ex: "Revisão 10.000 km"
+  currentKm     Int?
+  nextReviewKm  Int?
+  createdAt     DateTime @default(now())
+
+  Maintenance Maintenance @relation(fields: [maintenanceId], references: [id])
 }
 
 model Fuel {

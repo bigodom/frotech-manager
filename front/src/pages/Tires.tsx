@@ -7,7 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Plus } from "lucide-react"
 import type { Tire, CreateTireDTO } from "@/lib/types/Tire"
+
+// Tipo auxiliar para edição, permitindo string em purchaseDate
+type EditTireData = Omit<Tire, 'purchaseDate'> & { purchaseDate: string };
 import api from "@/services/useApi"
+import { dateToISO, formatDate } from "@/lib/utils"
 
 export default function Tires() {
   const [tires, setTires] = useState<Tire[]>([])
@@ -26,7 +30,8 @@ export default function Tires() {
   const [selectedTire, setSelectedTire] = useState<Tire | null>(null)
   const [isViewOpen, setIsViewOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
-  const [editTireData, setEditTireData] = useState<Tire | null>(null)
+  // Permite que purchaseDate seja string ou Date durante edição
+  const [editTireData, setEditTireData] = useState<EditTireData | null>(null)
 
   const handleNeuTire = async (data: CreateTireDTO) => {
     try {
@@ -48,6 +53,26 @@ export default function Tires() {
     catch (error) {
       console.error('Erro ao cadastrar pneu:', error)
       alert('Erro ao cadastrar pneu. Tente novamente mais tarde.')
+    }
+  }
+
+  const handleEditTire = async (data: EditTireData) => {
+    if (!selectedTire) return;
+    // Converte purchaseDate para Date
+    const payload: Tire = {
+      ...data,
+      purchaseDate: new Date(data.purchaseDate)
+    };
+    try {
+      const response = await api.put(`/tire/${selectedTire.id}`, payload)
+      setTires(prev => prev.map(t => t.id === selectedTire.id ? response.data : t))
+      setIsViewOpen(false)
+      setSelectedTire(null)
+      setIsEditMode(false)
+      setEditTireData(null)
+    } catch (error) {
+      console.error('Erro ao editar pneu:', error)
+      alert('Erro ao editar pneu. Tente novamente mais tarde.')
     }
   }
 
@@ -118,7 +143,23 @@ export default function Tires() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="purchaseDate">Data de Compra</Label>
-                <Input id="purchaseDate" name="purchaseDate" type="date" value={typeof formData.purchaseDate === 'string' ? formData.purchaseDate : formData.purchaseDate.toISOString().split('T')[0]} onChange={handleChange} required />
+                <Input
+                  id="purchaseDate"
+                  name="purchaseDate"
+                  type="date"
+                  value={(() => {
+                    if (typeof formData.purchaseDate === 'string') {
+                      // Se for string, tenta validar se é uma data válida
+                      const d = dateToISO(formData.purchaseDate);
+                      return isNaN(new Date(d).getTime()) ? '' : d;
+                    } else if (formData.purchaseDate instanceof Date) {
+                      return isNaN(formData.purchaseDate.getTime()) ? '' : formData.purchaseDate.toISOString().split('T')[0];
+                    }
+                    return '';
+                  })()}
+                  onChange={handleChange}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="brand">Marca *</Label>
@@ -175,12 +216,17 @@ export default function Tires() {
                 <div><Label>Sulco (mm)</Label><p>{selectedTire.grooveDepth}</p></div>
                 <div><Label>Valor (R$)</Label><p>{selectedTire.value}</p></div>
                 <div><Label>KM Atual</Label><p>{selectedTire.currentKm}</p></div>
-                <div><Label>Data Compra</Label><p>{selectedTire.purchaseDate instanceof Date ? selectedTire.purchaseDate.toLocaleDateString() : new Date(selectedTire.purchaseDate).toLocaleDateString()}</p></div>
+                <div><Label>Data Compra</Label><p>{formatDate(selectedTire.purchaseDate)}</p></div>
               </div>
               <div className="flex justify-end space-x-2">
                 <Button onClick={() => {
                   setIsEditMode(true);
-                  setEditTireData(selectedTire);
+                  setEditTireData({
+                    ...selectedTire!,
+                    purchaseDate: selectedTire!.purchaseDate instanceof Date
+                      ? selectedTire!.purchaseDate.toISOString().split('T')[0]
+                      : new Date(selectedTire!.purchaseDate).toISOString().split('T')[0]
+                  });
                 }}>Editar</Button>
                 <Button type="button" variant="outline" onClick={() => setIsViewOpen(false)}>Fechar</Button>
               </div>
@@ -189,10 +235,10 @@ export default function Tires() {
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                // Aqui você pode fazer o update na API se desejar
-                setTires(prev => prev.map(t => t.id === editTireData.id ? editTireData : t));
+                handleEditTire(editTireData);
                 setIsEditMode(false);
                 setIsViewOpen(false);
+                fetchTires();
               }}
               className="space-y-4"
             >
@@ -211,7 +257,14 @@ export default function Tires() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-purchaseDate">Data de Compra</Label>
-                  <Input id="edit-purchaseDate" name="purchaseDate" type="date" value={typeof editTireData.purchaseDate === 'string' ? editTireData.purchaseDate : editTireData.purchaseDate.toISOString().split('T')[0]} onChange={e => setEditTireData(prev => prev ? { ...prev, purchaseDate: e.target.value } : null)} required />
+                  <Input
+                    id="edit-purchaseDate"
+                    name="purchaseDate"
+                    type="date"
+                    value={editTireData.purchaseDate}
+                    onChange={e => setEditTireData(prev => prev ? { ...prev, purchaseDate: e.target.value } : null)}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-brand">Marca *</Label>
@@ -283,7 +336,7 @@ export default function Tires() {
                     <TableCell>{tire.grooveDepth}</TableCell>
                     <TableCell>{tire.value}</TableCell>
                     <TableCell>{tire.currentKm}</TableCell>
-                    <TableCell>{tire.purchaseDate instanceof Date ? tire.purchaseDate.toLocaleDateString() : new Date(tire.purchaseDate).toLocaleDateString()}</TableCell>
+                    <TableCell>{formatDate(tire.purchaseDate)}</TableCell>
                   </TableRow>
                 ))
               )}

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createMaintenance, deleteMaintenance, getMaintenanceById, getMaintenances, getMaintenancesByPlate, updateMaintenance } from '../controllers/maintenanceController.js';
+import { createMaintenance, deleteMaintenance, getAllMaintenancesWithReviews, getMaintenanceById, getMaintenances, getMaintenancesByInvoiceId, getMaintenancesByPlate, getMaintenanceWithReview, updateMaintenance } from '../controllers/maintenanceController.js';
 const maintenanceRouter = Router();
 
 maintenanceRouter.route('/maintenance')
@@ -14,4 +14,10 @@ maintenanceRouter.route('/maintenance/:id')
 maintenanceRouter.route('/maintenance/plate/:plate')
     .get(getMaintenancesByPlate);
 
+maintenanceRouter.route('/maintenance/invoice/:invoiceId')
+    .get(getMaintenancesByInvoiceId); 
+
+maintenanceRouter.route('/maintenancewithreview/:id')
+    .get(getMaintenanceWithReview)
+    
 export default maintenanceRouter;

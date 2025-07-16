@@ -44,7 +44,11 @@ const getAllTires = async (req, res) => {
   /* #swagger.tags = ['Tire']
   #swagger.description = 'Get all tires' */
   try {
-    const tires = await prisma.tire.findMany();
+    const tires = await prisma.tire.findMany({
+      orderBy: {
+        fireId : 'asc' 
+      }
+    });
     res.json(tires);
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -40,8 +40,8 @@ const getAllVehicleTires = async (req, res) => {
   try {
     const vehicleTires = await prisma.vehicleTire.findMany({
       include: {
-        vehicle: true,
-        tire: true
+        Vehicle: true,
+        Tire: true
       }
     });
     res.json(vehicleTires);
@@ -58,8 +58,8 @@ const getVehicleTireById = async (req, res) => {
         const vehicleTire = await prisma.vehicleTire.findUnique({
             where: { id: parseInt(id) },
             include: {
-                vehicle: true,
-                tire: true
+                Vehicle: true,
+                Tire: true
             }
         });
 
