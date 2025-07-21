@@ -206,6 +206,19 @@ const updateMileageByPlateBatch = async (req, res) => {
   }
 }
 
+const getPlates = async (req, res) => {
+  /* #swagger.tags = ['Vehicle']
+  #swagger.description = 'Get plates' */
+  try {
+    const plates = await prisma.vehicle.findMany({
+      select: { plate: true }
+    });
+    res.json(plates);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
 export{
   createVehicle,
   getAllVehicles,
@@ -214,5 +227,6 @@ export{
   deleteVehicle,
   updateMileage,
   updateMileageByPlate,
-  updateMileageByPlateBatch
+  updateMileageByPlateBatch,
+  getPlates
 }; 

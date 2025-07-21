@@ -11,6 +11,7 @@ import { fetchMaintenances, createMaintenance, createMaintenanceWithReview, upda
 import { MaintenanceForm } from "./Maintenance/MaintenanceForm"
 import { MaintenanceDetails } from "./Maintenance/MaintenanceDetails"
 import { MaintenanceTable } from "./Maintenance/MaintenanceTable"
+import { toast } from "sonner"
 
 const PAGE_SIZE = 10
 
@@ -23,10 +24,13 @@ export default function MaintenancePage() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [searchPlate, setSearchPlate] = useState("")
   const [searchInvoiceId, setSearchInvoiceId] = useState("")
-
+  const [searchDescription, setSearchDescription] = useState("")
+  const [persistFields, setPersistFields] = useState(false)
+  const [initialData, setInitialData] = useState<Partial<CreateMaintenanceDTO>>({})
 
   useEffect(() => {
     loadMaintenances()
+    console.log("Maintenances loaded")
   }, [])
 
   const loadMaintenances = async () => {
@@ -39,17 +43,34 @@ export default function MaintenancePage() {
   }
 
 
-  const handleNewMaintenance = async (data: CreateMaintenanceDTO & { review?: { type: string, currentKm: number, nextReviewKm: number } }) => {
+  const handleNewMaintenance = async (
+    data: CreateMaintenanceDTO & { review?: { type: string, currentKm: number, nextReviewKm: number } }
+  ) => {
     try {
       if (data.review) {
         await createMaintenanceWithReview(data, data.review)
       } else {
         await createMaintenance(data)
       }
+
       await loadMaintenances()
-      setIsFormOpen(false)
+
+      toast.success("Manutenção cadastrada com sucesso!")
+
+      if (!persistFields) {
+        setInitialData({})
+      } else {
+        setInitialData({
+          plate: data.plate,
+          issuer: data.issuer,
+          invoiceId: data.invoiceId,
+          invoiceDate: data.invoiceDate,
+          date: data.date
+        })
+      }
     } catch (error) {
       console.error("Erro ao cadastrar manutenção:", error)
+      toast.warning("Erro ao cadastrar manutenção!")
     }
   }
 
@@ -91,7 +112,8 @@ export default function MaintenancePage() {
   const filteredMaintenances = maintenances.filter(m => {
     const plateMatch = searchPlate === "" || m.plate.toLowerCase().includes(searchPlate.toLowerCase())
     const invoiceMatch = searchInvoiceId === "" || String(m.invoiceId).includes(searchInvoiceId)
-    return plateMatch && invoiceMatch
+    const descriptionMatch = searchDescription === "" || m.description.toLowerCase().includes(searchDescription.toLowerCase())
+    return plateMatch && invoiceMatch && descriptionMatch
   })
   const totalPages = Math.ceil(filteredMaintenances.length / PAGE_SIZE)
   const paginatedMaintenances = filteredMaintenances.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -113,7 +135,11 @@ export default function MaintenancePage() {
             <DialogHeader>
               <DialogTitle>Cadastrar Manutenção</DialogTitle>
             </DialogHeader>
-            <MaintenanceForm onSubmit={handleNewMaintenance} onCancel={() => setIsFormOpen(false)} />
+            <MaintenanceForm key={JSON.stringify(initialData)} onSubmit={handleNewMaintenance} onCancel={() => {
+              setIsFormOpen(false)
+              setInitialData({})
+            }} initialData={initialData}
+              persistFields={persistFields} setPersistFields={setPersistFields} />
           </DialogContent>
         </Dialog>
       )}
@@ -141,6 +167,15 @@ export default function MaintenancePage() {
               }}
               className="max-w-xs"
               type="number"
+            />
+            <Input
+              placeholder="Filtrar por descrição..."
+              value={searchDescription}
+              onChange={e => {
+                setSearchDescription(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="max-w-xs"
             />
           </div>
         </CardHeader>

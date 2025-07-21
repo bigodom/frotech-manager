@@ -32,4 +32,12 @@ export const deleteMaintenance = async (id: number) => {
   await api.delete(`/maintenance/${id}`)
 }
 
+export const fetchIssuers = async (): Promise<string[]> => {
+    const response = await api.get("/issuers")
+    return response.data
+}
 
+export const fetchPlates = async (): Promise<string[]> => {
+  const response = await api.get("/plates")
+  return response.data
+}

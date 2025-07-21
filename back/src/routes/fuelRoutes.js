@@ -14,7 +14,7 @@ fuelRouter.route('/fuel/:id')
 fuelRouter.route('/fuel/plate/:plate')
     .get(getFuelByPlate);
 
-fuelRouter.route('/orphaned')
+fuelRouter.route('/orphaned/fuel')
     .get(getOrphanedFuels);
 
 export default fuelRouter; 

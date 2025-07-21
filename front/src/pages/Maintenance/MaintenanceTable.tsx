@@ -13,7 +13,7 @@ interface MaintenanceTableProps {
 export function MaintenanceTable({ maintenances, onSelect }: MaintenanceTableProps) {
   const navigate = useNavigate()
   const handleInvoiceClick = (invoiceId: number) => {
-    navigate(`/maintenance/invoice/${invoiceId}`)
+    window.open(`/maintenance/invoice/${invoiceId}`, '_blank')
   }
 
   return (

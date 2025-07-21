@@ -107,6 +107,11 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/orphanfuel",
       icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8a8.01 8.01 0 0 1-8 8z"/><path d="M16.24 7.76a4.5 4.5 0 1 1-6.36-6.36l6.36 6.36z"/></svg>
     },
+    {
+      title: "Manutenções Órfãos",
+      href: "/orphanmaintenance",
+      icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8a8.01 8.01 0 0 1-8 8z"/><path d="M16.24 7.76a4.5 4.5 0 1 1-6.36-6.36l6.36 6.36z"/></svg>
+    },
   ]
 
   const UserProfile = () => (

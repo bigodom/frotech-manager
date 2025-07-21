@@ -124,5 +124,5 @@ export{
   getAllDrivers,
   getDriverById,
   updateDriver,
-  deleteDriver
+  deleteDriver,
 }; 

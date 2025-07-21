@@ -5,76 +5,75 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import type { Fuel } from "@/lib/types/Fuel"
+import type { Maintenance } from "@/lib/types/Maintenance"
 import api from "@/services/useApi"
-import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
+import { formatDate } from "@/lib/utils"
 
-export default function OrphanFuel() {
-  const [fuels, setFuels] = useState<Fuel[]>([])
-  const [selectedFuel, setSelectedFuel] = useState<Fuel | null>(null)
+export default function OrphanMaintenance() {
+  const [maintenances, setMaintenances] = useState<Maintenance[]>([])
+  const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const PAGE_SIZE = 10
   const [currentPage, setCurrentPage] = useState(1)
 
-  const handleEditFuel = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleEditMaintenance = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!selectedFuel) return
+    if (!selectedMaintenance) return
 
     try {
-      await api.put(`/fuel/${selectedFuel.id}`, selectedFuel)
-      await fetchFuels()
+      await api.put(`/maintenance/${selectedMaintenance.id}`, selectedMaintenance)
+      await fetchMaintenances()
       setIsEditOpen(false)
-      setSelectedFuel(null)
-      toast.success("Abastecimento atualizado com sucesso!" + ` Placa: ${selectedFuel.plate}`)
+      setSelectedMaintenance(null)
+      toast.success("Manutenção atualizada com sucesso!" + ` Placa: ${selectedMaintenance.plate}`)
     } catch (error) {
-      console.error("Erro ao atualizar abastecimento:", error)
+      console.error("Erro ao atualizar manutenção:", error)
     }
   }
 
-  const fetchFuels = async () => {
+  const fetchMaintenances = async () => {
     try {
-      const response = await api.get("/orphaned/fuel")
-      const sortedFuels = response.data.sort((a: Fuel, b: Fuel) => 
+      const response = await api.get("/orphaned/maintenance")
+      const sortedMaintenances = response.data.sort((a: Maintenance, b: Maintenance) => 
         new Date(b.date).getTime() - new Date(a.date).getTime()
       )
-      setFuels(sortedFuels)
+      setMaintenances(sortedMaintenances)
     } catch (error) {
-      console.error("Erro ao buscar abastecimentos:", error)
+      console.error("Erro ao buscar manutenções:", error)
     }
   }
 
-  const filteredFuels = fuels.filter(fuel =>
+  const filteredMaintenances = maintenances.filter(maintenance =>
     searchTerm === "" || 
-    fuel.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    fuel.issuer.toLowerCase().includes(searchTerm.toLowerCase())
+    maintenance.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    maintenance.issuer.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   useEffect(() => {
-    fetchFuels()
+    fetchMaintenances()
   }, [])
 
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm])
 
-
-  const totalPages = Math.ceil(filteredFuels.length / PAGE_SIZE)
-  const paginatedFuels = filteredFuels.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const totalPages = Math.ceil(filteredMaintenances.length / PAGE_SIZE)
+  const paginatedMaintenances = filteredMaintenances.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Abastecimentos Órfãos</h1>
+        <h1 className="text-3xl font-bold">Manutenções Órfãs</h1>
       </div>
-        <h2 className="text-2xl">Abastecimentos que não possuem veículos cadastrados</h2>
+      <h2 className="text-2xl">Manutenções que não possuem veículos cadastrados</h2>
 
       <Card>
         <CardHeader>
-          <CardTitle>Abastecimentos Cadastrados</CardTitle>
+          <CardTitle>Manutenções Cadastradas</CardTitle>
           <CardDescription>
-            Lista de todos os abastecimentos registrados na frota.
+            Lista de todas as manutenções registradas na frota sem vínculo com veículos cadastrados.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -94,35 +93,37 @@ export default function OrphanFuel() {
                     <TableHead>Placa</TableHead>
                     <TableHead>Emissor</TableHead>
                     <TableHead>Data</TableHead>
-                    <TableHead>Tipo</TableHead>
+                    <TableHead>Descrição</TableHead>
                     <TableHead>Quantidade</TableHead>
+                    <TableHead>Valor Unitário</TableHead>
                     <TableHead>Custo Total</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedFuels.length === 0 ? (
+                  {paginatedMaintenances.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center">
-                        Nenhum abastecimento encontrado
+                        Nenhuma manutenção encontrada
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedFuels.map((fuel) => (
-                      <TableRow key={fuel.id}>
-                        <TableCell>{fuel.plate}</TableCell>
-                        <TableCell>{fuel.issuer}</TableCell>
-                        <TableCell>{formatDate(fuel.date)}</TableCell>
-                        <TableCell>{fuel.fuelType}</TableCell>
-                        <TableCell>{fuel.quantity} L</TableCell>
-                        <TableCell>R$ {fuel.totalCost.toFixed(2)}</TableCell>
+                    paginatedMaintenances.map((maintenance) => (
+                      <TableRow key={maintenance.id}>
+                        <TableCell>{maintenance.plate}</TableCell>
+                        <TableCell>{maintenance.issuer}</TableCell>
+                        <TableCell>{maintenance.date ? formatDate(maintenance.date) : ""}</TableCell>
+                        <TableCell>{maintenance.description}</TableCell>
+                        <TableCell>{maintenance.quantity}</TableCell>
+                        <TableCell>R$ {maintenance.value?.toFixed(2)}</TableCell>
+                        <TableCell>R$ {maintenance.totalCost?.toFixed(2)}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                setSelectedFuel(fuel)
+                                setSelectedMaintenance(maintenance)
                                 setIsEditOpen(true)
                               }}
                             >
@@ -149,20 +150,20 @@ export default function OrphanFuel() {
         </CardContent>
       </Card>
 
-      {isEditOpen && selectedFuel && (
+      {isEditOpen && selectedMaintenance && (
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DialogContent className="max-w-4xl">
             <DialogHeader>
-              <DialogTitle>Editar Abastecimento</DialogTitle>
+              <DialogTitle>Editar Manutenção</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleEditFuel} className="space-y-4">
+            <form onSubmit={handleEditMaintenance} className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-invoiceId">Número da Nota</Label>
                   <Input
                     id="edit-invoiceId"
-                    value={selectedFuel.invoiceId}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, invoiceId: parseInt(e.target.value)})}
+                    value={selectedMaintenance.invoiceId}
+                    onChange={(e) => setSelectedMaintenance({...selectedMaintenance, invoiceId: parseInt(e.target.value)})}
                     type="number"
                   />
                 </div>
@@ -170,8 +171,8 @@ export default function OrphanFuel() {
                   <Label htmlFor="edit-issuer">Emissor</Label>
                   <Input
                     id="edit-issuer"
-                    value={selectedFuel.issuer}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, issuer: e.target.value})}
+                    value={selectedMaintenance.issuer}
+                    onChange={(e) => setSelectedMaintenance({...selectedMaintenance, issuer: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
@@ -179,60 +180,51 @@ export default function OrphanFuel() {
                   <Input
                     type="date"
                     id="edit-invoiceDate"
-                    value={selectedFuel.invoiceDate.toString().split('T')[0]}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, invoiceDate: new Date(e.target.value)})}
+                    value={selectedMaintenance.invoiceDate ? new Date(selectedMaintenance.invoiceDate).toISOString().split('T')[0] : ""}
+                    onChange={(e) => setSelectedMaintenance({...selectedMaintenance, invoiceDate: new Date(e.target.value)})}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-date">Data do Abastecimento</Label>
+                  <Label htmlFor="edit-date">Data da Manutenção</Label>
                   <Input
                     type="date"
                     id="edit-date"
-                    value={selectedFuel.date.toString().split('T')[0]}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, date: new Date(e.target.value)})}
+                    value={selectedMaintenance.date ? new Date(selectedMaintenance.date).toISOString().split('T')[0] : ""}
+                    onChange={(e) => setSelectedMaintenance({...selectedMaintenance, date: new Date(e.target.value)})}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-plate">Placa</Label>
                   <Input
                     id="edit-plate"
-                    value={selectedFuel.plate}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, plate: e.target.value})}
+                    value={selectedMaintenance.plate}
+                    onChange={(e) => setSelectedMaintenance({...selectedMaintenance, plate: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-kilometers">Quilometragem</Label>
+                  <Label htmlFor="edit-description">Descrição</Label>
                   <Input
-                    id="edit-kilometers"
-                    value={selectedFuel.kilometers}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, kilometers: parseInt(e.target.value)})}
-                    type="number"
+                    id="edit-description"
+                    value={selectedMaintenance.description}
+                    onChange={(e) => setSelectedMaintenance({...selectedMaintenance, description: e.target.value})}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-fuelType">Tipo de Combustível</Label>
-                  <Input
-                    id="edit-fuelType"
-                    value={selectedFuel.fuelType}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, fuelType: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-quantity">Quantidade (L)</Label>
+                  <Label htmlFor="edit-quantity">Quantidade</Label>
                   <Input
                     id="edit-quantity"
-                    value={selectedFuel.quantity}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, quantity: parseFloat(e.target.value)})}
+                    value={selectedMaintenance.quantity}
+                    onChange={(e) => setSelectedMaintenance({...selectedMaintenance, quantity: parseFloat(e.target.value)})}
                     type="number"
                     step="0.01"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-unitCost">Custo Unitário (R$)</Label>
+                  <Label htmlFor="edit-value">Valor Unitário (R$)</Label>
                   <Input
-                    id="edit-unitCost"
-                    value={selectedFuel.unitCost}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, unitCost: parseFloat(e.target.value)})}
+                    id="edit-value"
+                    value={selectedMaintenance.value}
+                    onChange={(e) => setSelectedMaintenance({...selectedMaintenance, value: parseFloat(e.target.value)})}
                     type="number"
                     step="0.01"
                   />
@@ -241,18 +233,18 @@ export default function OrphanFuel() {
                   <Label htmlFor="edit-totalCost">Custo Total (R$)</Label>
                   <Input
                     id="edit-totalCost"
-                    value={selectedFuel.totalCost}
-                    onChange={(e) => setSelectedFuel({...selectedFuel, totalCost: parseFloat(e.target.value)})}
+                    value={selectedMaintenance.totalCost}
+                    onChange={(e) => setSelectedMaintenance({...selectedMaintenance, totalCost: parseFloat(e.target.value)})}
                     type="number"
                     step="0.01"
                   />
                 </div>
               </div>
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end gap-2">
+                <Button type="submit">Salvar</Button>
                 <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit">Salvar</Button>
               </div>
             </form>
           </DialogContent>

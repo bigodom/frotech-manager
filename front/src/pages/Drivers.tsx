@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Plus } from "lucide-react"
 import type { CreateDriverDTO, Driver } from "@/lib/types/Driver"
 import api from "@/services/useApi"
+import { formatDate } from "@/lib/utils"
 
 export default function Drivers() {
   const [drivers, setDrivers] = useState<Driver[]>([])
@@ -203,6 +204,7 @@ export default function Drivers() {
                     <TableHead>CNH</TableHead>
                     <TableHead>Categoria</TableHead>
                     <TableHead>Telefone</TableHead>
+                    <TableHead>Validade CNH</TableHead>
                     <TableHead>Posição</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -230,6 +232,7 @@ export default function Drivers() {
                         <TableCell>{driver.cnh || '-'}</TableCell>
                         <TableCell>{driver.cnhCategory || '-'}</TableCell>
                         <TableCell>{driver.phone || '-'}</TableCell>
+                        <TableCell>{driver.cnhExpiration ? formatDate(driver.cnhExpiration) : '-'}</TableCell>
                         <TableCell>{driver.position || '-'}</TableCell>
                       </TableRow>
                     ))
@@ -338,13 +341,13 @@ export default function Drivers() {
                 </div>
               </div>
               <div className="flex justify-end space-x-2">
-                <Button 
+                {/* <Button 
                   type="button" 
                   variant="destructive" 
                   onClick={handleDeleteDriver}
                 >
                   Excluir
-                </Button>
+                </Button> */}
                 <Button type="button" variant="outline" onClick={handleCancelEdit}>
                   Cancelar
                 </Button>
@@ -390,13 +393,13 @@ export default function Drivers() {
                 </div>
               </div>
               <div className="flex justify-end space-x-2">
-                <Button 
+                {/* <Button 
                   type="button" 
                   variant="destructive" 
                   onClick={handleDeleteDriver}
                 >
                   Excluir
-                </Button>
+                </Button> */}
                 <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
                   Fechar
                 </Button>
