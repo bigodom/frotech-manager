@@ -29,8 +29,6 @@ export function MaintenanceForm({ initialData = {}, onSubmit, onCancel, submitLa
         date: initialData.date ? new Date(initialData.date) : undefined,
     })
 
-    const [lastData, setLastData] = React.useState<Partial<CreateMaintenanceDTO>>({})
-
     const [hasReview, setHasReview] = React.useState(false)
     const [review, setReview] = React.useState<ReviewFormData>({ type: '', currentKm: 0, nextReviewKm: 0 })
     const maisUm = persistFields ?? false
@@ -147,34 +145,39 @@ export function MaintenanceForm({ initialData = {}, onSubmit, onCancel, submitLa
     }, [])
 
     const handleCancel = () => {
-      // limpa estado interno
-      setForm({
-        invoiceDate: undefined,
-        date: undefined,
-        issuer: '',
-        plate: '',
-        invoiceId: undefined,
-        description: '',
-        quantity: undefined,
-        value: undefined,
-        totalCost: undefined,
-      })
-      setReview({ type: '', currentKm: 0, nextReviewKm: 0 })
-      setHasReview(false)
-      setMaisUm(false)
-      // opcional: se o pai estiver controlando persistFields, limpa lá também
-      if (setPersistFields) setPersistFields(false)
+        // limpa estado interno
+        setForm({
+            invoiceDate: undefined,
+            date: undefined,
+            issuer: '',
+            plate: '',
+            invoiceId: undefined,
+            description: '',
+            quantity: undefined,
+            value: undefined,
+            totalCost: undefined,
+        })
+        setReview({ type: '', currentKm: 0, nextReviewKm: 0 })
+        setHasReview(false)
+        setMaisUm(false)
+        // opcional: se o pai estiver controlando persistFields, limpa lá também
+        if (setPersistFields) setPersistFields(false)
 
-      // finalmente, fecha o form
-      onCancel()
+        // finalmente, fecha o form
+        onCancel()
     }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="description">Descrição *</Label>
-                    <Input id="description" name="description" value={form.description || ''} onChange={handleChange} required />
+                    <Label htmlFor="issuer">Emissor *</Label>
+                    <Input id="issuer" name="issuer" className={maisUm ? 'bg-yellow-100' : ''} value={form.issuer || ''} onChange={handleChange} list="issuers-list" required autoComplete="off" />
+                    <datalist id="issuers-list">
+                        {issuers.map((issuer, i) => (
+                            <option key={i} value={issuer} />
+                        ))}
+                    </datalist>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="date">Data *</Label>
@@ -199,13 +202,8 @@ export function MaintenanceForm({ initialData = {}, onSubmit, onCancel, submitLa
                     <Input id="invoiceDate" name="invoiceDate" type="date" className={maisUm ? 'bg-yellow-100' : ''} value={form.invoiceDate ? new Date(form.invoiceDate).toISOString().split('T')[0] : ''} onChange={handleDateChange} required />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="issuer">Emissor *</Label>
-                    <Input id="issuer" name="issuer" className={maisUm ? 'bg-yellow-100' : ''} value={form.issuer || ''} onChange={handleChange} list="issuers-list" required autoComplete="off" />
-                    <datalist id="issuers-list">
-                        {issuers.map((issuer, i) => (
-                            <option key={i} value={issuer} />
-                        ))}
-                    </datalist>
+                    <Label htmlFor="description">Descrição *</Label>
+                    <Input id="description" name="description" value={form.description || ''} onChange={handleChange} required />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="quantity">Quantidade *</Label>

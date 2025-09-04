@@ -9,6 +9,7 @@ export type Alerts = {
     isCompleted: boolean;
     createdAt: Date;
     updatedAt: Date;
+    vehicle?: import("./Vehicle").Vehicle;
 }
 
 export type CreateAlertsDTO = Omit<Alerts, 'id' | 'createdAt' | 'updatedAt'>;

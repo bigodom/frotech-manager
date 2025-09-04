@@ -12,6 +12,8 @@ import VehicleAnalysis from "./pages/VehicleAnalysis"
 import OrphanFuel from "./pages/OrphanFuel";
 import TireAllocation from "./pages/TireAllocation";
 import OrphanMaintenance from "./pages/OrphanMaintenance";
+import ExpensesDashboard from "./pages/Dashboard";
+import ReportsPage from "./pages/Reports";
 
 const AppRoutes = () => {
   return (
@@ -27,11 +29,12 @@ const AppRoutes = () => {
           <Route path="/fuel" element={<Fuel />} />
           <Route path="/orphanfuel" element={<OrphanFuel />} />
           <Route path="/orphanmaintenance" element={<OrphanMaintenance />} />
-          <Route path="/reports" element={<div>Relatórios</div>} />
+          <Route path="/reports" element={<ReportsPage/>} />
           <Route path="/settings" element={<div>Configurações</div>} />
           <Route path="/vehicles/analysis/:plate" element={<VehicleAnalysis />} />
           <Route path="/alocar" element={<TireAllocation />} />
           <Route path="/maintenance/invoice/:invoiceId" element={<InvoicePage />} />
+          <Route path="/dashboard" element={<ExpensesDashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>

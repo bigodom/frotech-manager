@@ -9,6 +9,8 @@ import maintenanceRouter from './routes/maintenanceRoutes.js';
 import tireRouter from './routes/tireRoutes.js';
 import vehicleTireRouter from './routes/vehicleTireRoutes.js';
 import reviewRouter from './routes/reviewRoutes.js';
+import alertsRouter from './routes/alertsRoutes.js';
+import dashboardRouter from './routes/dashboardRoutes.js';
 
 const swaggerFile = JSON.parse(readFileSync('./src/swagger.json', 'utf8'));
 const app = express();
@@ -27,6 +29,8 @@ app.use(maintenanceRouter);
 app.use(tireRouter);
 app.use(vehicleTireRouter);
 app.use(reviewRouter);
+app.use(alertsRouter);
+app.use(dashboardRouter);
 
 app.get('/', (req, res) => {
   res.send('API is running');

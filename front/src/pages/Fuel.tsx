@@ -17,8 +17,9 @@ export default function Fuel() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedFuel, setSelectedFuel] = useState<Fuel | null>(null)
   const [isEditOpen, setIsEditOpen] = useState(false)
-  const [isEditMode, setIsEditMode] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedMonth, setSelectedMonth] = useState<string>("")
+  const [selectedYear, setSelectedYear] = useState<string>("")
   const PAGE_SIZE = 10
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -83,28 +84,35 @@ export default function Fuel() {
   const fetchFuels = async () => {
     try {
       const response = await api.get("/fuel")
-      const sortedFuels = response.data.sort((a: Fuel, b: Fuel) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      )
+      const sortedFuels = response.data.sort((a: Fuel, b: Fuel) => {
+        const timeDiff = new Date(b.date).getTime() - new Date(a.date).getTime()
+        if (timeDiff !== 0) return timeDiff
+        return String(a.plate).localeCompare(String(b.plate), "pt-BR", { numeric: true, sensitivity: "base" })
+      })
       setFuels(sortedFuels)
     } catch (error) {
       console.error("Erro ao buscar abastecimentos:", error)
     }
   }
 
-  const filteredFuels = fuels.filter(fuel =>
-    searchTerm === "" || 
-    fuel.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    fuel.issuer.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredFuels = fuels.filter((fuel) => {
+    const matchesSearch =
+      searchTerm === "" ||
+      fuel.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      fuel.issuer.toLowerCase().includes(searchTerm.toLowerCase())
 
-  const handleEditClick = () => {
-    setIsEditMode(true)
-  }
+    const date = new Date(fuel.date)
+    const monthUtc = date.getUTCMonth() + 1
+    const yearUtc = date.getUTCFullYear()
+    const matchesMonth =
+      selectedMonth === "" || selectedMonth === "all" || monthUtc === parseInt(selectedMonth)
+    const matchesYear =
+      selectedYear === "" || selectedYear === "all" || yearUtc === parseInt(selectedYear)
 
-  const handleCancelEdit = () => {
-    setIsEditMode(false)
-  }
+    return matchesSearch && matchesMonth && matchesYear
+  })
+
+  
 
   useEffect(() => {
     fetchFuels()
@@ -112,20 +120,62 @@ export default function Fuel() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm])
+  }, [searchTerm, selectedMonth, selectedYear])
 
 
-  const totalPages = Math.ceil(filteredFuels.length / PAGE_SIZE)
-  const paginatedFuels = filteredFuels.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const sortedFilteredFuels = [...filteredFuels].sort((a, b) => {
+    const ad = new Date(a.date)
+    const bd = new Date(b.date)
+    const aDayUtc = Date.UTC(ad.getUTCFullYear(), ad.getUTCMonth(), ad.getUTCDate())
+    const bDayUtc = Date.UTC(bd.getUTCFullYear(), bd.getUTCMonth(), bd.getUTCDate())
+    const dateCmp = bDayUtc - aDayUtc // desc por dia, ignorando hora
+    if (dateCmp !== 0) return dateCmp
+    return String(a.plate).localeCompare(String(b.plate), "pt-BR", { numeric: true, sensitivity: "base" })
+  })
+
+  const totalPages = Math.ceil(sortedFilteredFuels.length / PAGE_SIZE)
+  const paginatedFuels = sortedFilteredFuels.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  const months = [
+    { value: "1", label: "Jan" },
+    { value: "2", label: "Fev" },
+    { value: "3", label: "Mar" },
+    { value: "4", label: "Abr" },
+    { value: "5", label: "Mai" },
+    { value: "6", label: "Jun" },
+    { value: "7", label: "Jul" },
+    { value: "8", label: "Ago" },
+    { value: "9", label: "Set" },
+    { value: "10", label: "Out" },
+    { value: "11", label: "Nov" },
+    { value: "12", label: "Dez" }
+  ]
+
+  const availableYears = Array.from(
+    new Set(
+      fuels
+        .map((f) => new Date(f.date).getUTCFullYear())
+        .filter((y) => !Number.isNaN(y))
+    )
+  )
+    .sort((a, b) => b - a)
+    .map((y) => String(y))
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Abastecimentos</h1>
-        <Button onClick={() => setIsFormOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Abastecimento
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <a href="http://192.168.11.95:5000/" target="_blank" rel="noopener noreferrer">
+              Abrir extração de notas
+            </a>
+          </Button>
+          <Button onClick={() => setIsFormOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Abastecimento
+          </Button>
+        </div>
       </div>
 
       {isFormOpen && (
@@ -197,13 +247,36 @@ export default function Fuel() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Input
                 placeholder="Filtrar por placa ou emissor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="max-w-sm"
               />
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {months.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {availableYears.map((y) => (
+                    <SelectItem key={y} value={y}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" onClick={() => { setSelectedMonth(""); setSelectedYear("") }}>Limpar</Button>
             </div>
             <div className="max-h-[calc(100vh-300px)] overflow-auto">
               <Table>
@@ -215,6 +288,7 @@ export default function Fuel() {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Quantidade</TableHead>
                     <TableHead>Custo Total</TableHead>
+                    <TableHead>Preço Médio</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -234,6 +308,9 @@ export default function Fuel() {
                         <TableCell>{fuel.fuelType}</TableCell>
                         <TableCell>{fuel.quantity} L</TableCell>
                         <TableCell>R$ {fuel.totalCost.toFixed(2)}</TableCell>
+                        <TableCell>
+                          R$ {fuel.quantity ? (fuel.totalCost / fuel.quantity).toFixed(2) : "0.00"}
+                        </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
                             <Button

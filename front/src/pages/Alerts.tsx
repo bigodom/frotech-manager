@@ -27,10 +27,11 @@ import {
 import { Plus } from "lucide-react"
 import type { Alerts } from "@/lib/types/Alerts"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-
+import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
 import api from "@/services/useApi"
 import type { Vehicle } from "@/lib/types/Vehicle"
+import { utils } from "xlsx"
 
 export default function Alerts() {
   const [alerts, setAlerts] = useState<Alerts[]>([])
@@ -43,40 +44,77 @@ export default function Alerts() {
     value: undefined,
     doneDate: "",
     kmAlert: 0,
-    isCompleted: false,
-    priority: "medium",
-    status: "pending"
   })
   const [customType, setCustomType] = useState("")
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [completeDialog, setCompleteDialog] = useState<{ open: boolean, alert: Alerts | null }>({ open: false, alert: null })
+  const [completeData, setCompleteData] = useState({
+    value: '',
+    doneDate: '',
+    repeat: false,
+    nextKmAlert: ''
+  })
+  const [detailsDialog, setDetailsDialog] = useState<{ open: boolean, alert: Alerts | null, edit: boolean }>({ open: false, alert: null, edit: false })
+  const [editData, setEditData] = useState<any>({})
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const newAlert: Alerts = {
-      id: Math.floor(Math.random() * 1000000),
-      vehicleId: Number(formData.vehicleId),
-      type: formData.type === "other" ? customType : formData.type,
-      description: formData.description,
-      value: formData.value ? Number(formData.value) : undefined,
-      doneDate: formData.doneDate ? new Date(formData.doneDate) : undefined,
-      kmAlert: Number(formData.kmAlert),
-      isCompleted: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  // Buscar alertas do backend
+  const fetchAlerts = async () => {
+    try {
+      const response = await api.get("/alerts")
+      setAlerts(response.data)
+    } catch (error) {
+      toast.warning("Erro ao buscar alertas!")
     }
-    setAlerts([...alerts, newAlert])
-    setFormData({
-      vehicleId: 0,
-      type: "",
-      description: "",
-      value: undefined,
-      doneDate: "",
-      kmAlert: 0,
-      isCompleted: false,
-      priority: "medium",
-      status: "pending"
+  }
+
+  useEffect(() => {
+    fetchAlerts()
+    async function fetchVehicles() {
+      try {
+        const response = await api.get("/vehicle")
+        setVehicles(response.data)
+      } catch (error) {
+        toast.warning("Erro ao buscar veículos!")
+      }
+    }
+    fetchVehicles()
+  }, [])
+
+  useEffect(() => {
+    alerts.forEach(alert => {
+      if (!alert.isCompleted && alert.vehicle && typeof alert.vehicle.mileage === 'number' && alert.kmAlert > 0) {
+        if (alert.vehicle.mileage >= alert.kmAlert - 1000 && alert.vehicle.mileage < alert.kmAlert) {
+          toast.info(`O veículo de placa ${alert.vehicle.plate} está a menos de 1000km do alerta: ${alert.description || alert.type}`)
+        }
+      }
     })
-    setIsFormOpen(false)
+  }, [alerts])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const payload = {
+        vehicleId: Number(formData.vehicleId),
+        type: formData.type === "other" ? customType : formData.type,
+        description: formData.description,
+        value: formData.value ? Number(formData.value) : undefined,
+        kmAlert: Number(formData.kmAlert),
+      }
+      await api.post("/alerts", payload)
+      toast.success("Alerta cadastrado com sucesso!")
+      setIsFormOpen(false)
+      setFormData({
+        vehicleId: 0,
+        type: "",
+        description: "",
+        value: undefined,
+        doneDate: "",
+        kmAlert: 0,
+      })
+      fetchAlerts()
+    } catch (error) {
+      toast.warning("Erro ao cadastrar alerta!")
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -94,31 +132,84 @@ export default function Alerts() {
     }))
   }
 
-  useEffect(() => {
-    async function fetchVehicles() {
-      try {
-        const response = await api.get("/vehicle")
-        setVehicles(response.data)
-      } catch (error) {
-        console.error("Erro ao buscar veículos:", error)
-      }
-    }
-    fetchVehicles()
-    toast.warning("Carregando veículos...", { duration: 2000, icon: "🔄" })
-  }, [])
+  // Função para concluir alerta
+  const handleComplete = (alert: Alerts) => {
+    setCompleteDialog({ open: true, alert })
+    setCompleteData({ value: '', doneDate: formatDate(new Date()), repeat: false, nextKmAlert: '' })
+  }
 
-  useEffect(() => {
-    alerts.forEach(alert => {
-      if (!alert.isCompleted) {
-        const vehicle = vehicles.find(v => v.id === alert.vehicleId)
-        if (vehicle && typeof vehicle.mileage === 'number' && alert.kmAlert > 0) {
-          if (vehicle.mileage >= alert.kmAlert - 500 && vehicle.mileage < alert.kmAlert) {
-            toast(`O veículo de placa ${vehicle.plate} está a menos de 500km do alerta: ${alert.description || alert.type}`)
-          }
-        }
+  const handleCompleteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target
+    setCompleteData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+  }
+
+  const handleConfirmComplete = async () => {
+    if (!completeDialog.alert) return
+    try {
+      await api.patch(`/alerts/${completeDialog.alert.id}/complete`, {
+        value: Number(completeData.value),
+        doneDate: completeData.doneDate,
+        repeat: completeData.repeat,
+        nextKmAlert: completeData.repeat ? completeData.nextKmAlert : undefined
+      })
+      toast.success('Alerta concluído com sucesso!')
+      setCompleteDialog({ open: false, alert: null })
+      fetchAlerts()
+    } catch (error) {
+      toast.warning('Erro ao concluir alerta!')
+    }
+  }
+
+  const handleRowClick = (alert: Alerts) => {
+    setDetailsDialog({ open: true, alert, edit: false })
+    setEditData(alert)
+  }
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target
+    setEditData((prev: any) => ({
+      ...prev,
+      [name]: type === 'number' ? Number(value) : value
+    }))
+  }
+
+  const handleSaveEdit = async () => {
+    if (!detailsDialog.alert) return
+    try {
+      // Filtra apenas os campos permitidos
+      const payload = {
+        vehicleId: editData.vehicleId,
+        type: editData.type,
+        description: editData.description,
+        value: editData.value,
+        doneDate: editData.doneDate,
+        kmAlert: editData.kmAlert,
+        isCompleted: editData.isCompleted
       }
-    })
-  }, [alerts, vehicles])
+      await api.put(`/alerts/${detailsDialog.alert.id}`, payload)
+      toast.success('Alerta atualizado com sucesso!')
+      setDetailsDialog({ open: false, alert: null, edit: false })
+      fetchAlerts()
+    } catch (error) {
+      toast.warning('Erro ao atualizar alerta!')
+    }
+  }
+
+  const handleDeleteAlert = async () => {
+    if (!detailsDialog.alert) return
+    if (!window.confirm('Tem certeza que deseja excluir este alerta?')) return
+    try {
+      await api.delete(`/alerts/${detailsDialog.alert.id}`)
+      toast.success('Alerta excluído com sucesso!')
+      setDetailsDialog({ open: false, alert: null, edit: false })
+      fetchAlerts()
+    } catch (error) {
+      toast.warning('Erro ao excluir alerta!')
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -160,11 +251,12 @@ export default function Alerts() {
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="maintenance">Manutenção</SelectItem>
-                      <SelectItem value="inspection">Inspeção</SelectItem>
-                      <SelectItem value="document">Documentação</SelectItem>
-                      <SelectItem value="tire">Pneu</SelectItem>
-                      <SelectItem value="fuel">Combustível</SelectItem>
+                      <SelectItem value="revisão">Revisão</SelectItem>
+                      <SelectItem value="manutenção">Manutenção</SelectItem>
+                      <SelectItem value="inspeção">Inspeção</SelectItem>
+                      <SelectItem value="documento">Documentação</SelectItem>
+                      <SelectItem value="pneu">Pneu</SelectItem>
+                      <SelectItem value="combustível">Combustível</SelectItem>
                       <SelectItem value="other">Outro</SelectItem>
                     </SelectContent>
                   </Select>
@@ -179,40 +271,30 @@ export default function Alerts() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="priority">Prioridade</Label>
+                  <Label htmlFor="vehicleId">Veículo</Label>
                   <Select
-                    value={formData.priority}
-                    onValueChange={(value) => handleSelectChange("priority", value)}
+                    value={formData.vehicleId ? String(formData.vehicleId) : ""}
+                    onValueChange={value => handleSelectChange("vehicleId", value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a prioridade" />
+                      <SelectValue placeholder="Selecione o veículo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Baixa</SelectItem>
-                      <SelectItem value="medium">Média</SelectItem>
-                      <SelectItem value="high">Alta</SelectItem>
-                      <SelectItem value="urgent">Urgente</SelectItem>
+                      {vehicles.map(vehicle => (
+                        <SelectItem key={vehicle.id} value={String(vehicle.id)}>
+                          {vehicle.plate} - {vehicle.model}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="vehicleId">Veículo</Label>
+                  <Label htmlFor="kmAlert">KM Alerta</Label>
                   <Input
-                    id="vehicleId"
-                    name="vehicleId"
-                    value={formData.vehicleId.toString()}
-                    onChange={handleChange}
-                    placeholder="Ex: 1234"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dueDate">Data Limite</Label>
-                  <Input
-                    id="dueDate"
-                    name="dueDate"
-                    type="date"
-                    value={formData.doneDate}
+                    id="kmAlert"
+                    name="kmAlert"
+                    type="number"
+                    value={formData.kmAlert}
                     onChange={handleChange}
                     required
                   />
@@ -228,23 +310,7 @@ export default function Alerts() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => handleSelectChange("status", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pendente</SelectItem>
-                      <SelectItem value="in_progress">Em Andamento</SelectItem>
-                      <SelectItem value="resolved">Resolvido</SelectItem>
-                      <SelectItem value="cancelled">Cancelado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Removido campo valor */}
               </div>
               <div className="flex justify-end space-x-2">
                 <Button
@@ -261,6 +327,109 @@ export default function Alerts() {
         </Dialog>
       )}
 
+      {/* Dialog para concluir alerta */}
+      <Dialog open={completeDialog.open} onOpenChange={open => setCompleteDialog({ open, alert: open ? completeDialog.alert : null })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Concluir Alerta</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="complete-value">Valor</Label>
+              <Input id="complete-value" name="value" type="number" value={completeData.value} onChange={handleCompleteChange} required />
+            </div>
+            <div>
+              <Label htmlFor="complete-doneDate">Data de Conclusão</Label>
+              <Input id="complete-doneDate" name="doneDate" type="date" value={completeData.doneDate} onChange={handleCompleteChange} required />
+            </div>
+            <div className="flex items-center gap-2">
+              <input id="complete-repeat" name="repeat" type="checkbox" checked={completeData.repeat} onChange={handleCompleteChange} />
+              <Label htmlFor="complete-repeat">Repetir alerta</Label>
+            </div>
+            {completeData.repeat && (
+              <div>
+                <Label htmlFor="complete-nextKmAlert">Nova KM de Alerta</Label>
+                <Input id="complete-nextKmAlert" name="nextKmAlert" type="number" value={completeData.nextKmAlert} onChange={handleCompleteChange} required={completeData.repeat} />
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setCompleteDialog({ open: false, alert: null })}>Cancelar</Button>
+              <Button onClick={handleConfirmComplete}>Concluir</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de detalhes/edição do alerta */}
+      <Dialog open={detailsDialog.open} onOpenChange={open => setDetailsDialog({ open, alert: open ? detailsDialog.alert : null, edit: false })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Alerta</DialogTitle>
+          </DialogHeader>
+          {detailsDialog.alert ? (
+            <form className="space-y-4" onSubmit={e => { e.preventDefault(); handleSaveEdit() }}>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Tipo</Label>
+                  <Input name="type" value={editData.type || ''} onChange={handleEditChange} disabled={!detailsDialog.edit} />
+                </div>
+                <div>
+                  <Label>Veículo</Label>
+                  {detailsDialog.edit ? (
+                    <Select
+                      value={editData.vehicleId ? String(editData.vehicleId) : ''}
+                      onValueChange={value => setEditData((prev: any) => ({ ...prev, vehicleId: Number(value) }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o veículo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vehicles.map(vehicle => (
+                          <SelectItem key={vehicle.id} value={String(vehicle.id)}>
+                            {vehicle.plate} - {vehicle.model}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input value={detailsDialog.alert.vehicle?.plate || ''} disabled />
+                  )}
+                </div>
+                <div>
+                  <Label>Descrição</Label>
+                  <Input name="description" value={editData.description || ''} onChange={handleEditChange} disabled={!detailsDialog.edit} />
+                </div>
+                <div>
+                  <Label>KM Alerta</Label>
+                  <Input name="kmAlert" type="number" value={editData.kmAlert || ''} onChange={handleEditChange} disabled={!detailsDialog.edit} />
+                </div>
+                <div>
+                  <Label>KM Atual</Label>
+                  <Input value={detailsDialog.alert.vehicle?.mileage || ''} disabled />
+                </div>
+                <div>
+                  <Label>Concluído</Label>
+                  <Input value={detailsDialog.alert.isCompleted ? 'Sim' : 'Não'} disabled />
+                </div>
+              </div>
+              <div className="flex justify-between gap-2 mt-4">
+                <Button type="button" variant="destructive" onClick={handleDeleteAlert}>Excluir</Button>
+                <div className="flex gap-2">
+                  {!detailsDialog.edit ? (
+                    <Button type="button" onClick={() => setDetailsDialog(d => ({ ...d, edit: true }))}>Editar</Button>
+                  ) : (
+                    <>
+                      <Button type="button" variant="outline" onClick={() => setDetailsDialog(d => ({ ...d, edit: false }))}>Cancelar</Button>
+                      <Button type="submit">Salvar</Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </form>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardHeader>
           <CardTitle>Alertas</CardTitle>
@@ -275,31 +444,39 @@ export default function Alerts() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Veículo</TableHead>
                 <TableHead>Descrição</TableHead>
-                <TableHead>Data Limite</TableHead>
                 <TableHead>KM Alerta</TableHead>
+                <TableHead>KM Atual</TableHead>
                 <TableHead>Concluído</TableHead>
                 <TableHead>Criado em</TableHead>
                 <TableHead>Atualizado em</TableHead>
+                <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {alerts.filter(a => a.isCompleted === showCompleted).length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center">
+                  <TableCell colSpan={9} className="text-center">
                     Nenhum alerta encontrado
                   </TableCell>
                 </TableRow>
               ) : (
                 alerts.filter(a => a.isCompleted === showCompleted).map((alert) => (
-                  <TableRow key={alert.id}>
+                  <TableRow key={alert.id} onClick={() => handleRowClick(alert)} className="cursor-pointer hover:bg-gray-100">
                     <TableCell>{alert.type}</TableCell>
-                    <TableCell>{alert.vehicleId}</TableCell>
+                    <TableCell>{alert.vehicle?.plate || alert.vehicleId}</TableCell>
                     <TableCell>{alert.description}</TableCell>
-                    <TableCell>{alert.doneDate ? new Date(alert.doneDate).toLocaleDateString('pt-BR') : '-'}</TableCell>
                     <TableCell>{alert.kmAlert}</TableCell>
+                    <TableCell>{alert.vehicle?.mileage}</TableCell>
                     <TableCell>{alert.isCompleted ? 'Sim' : 'Não'}</TableCell>
                     <TableCell>{new Date(alert.createdAt).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>{new Date(alert.updatedAt).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>
+                      {!alert.isCompleted && (
+                        <Button size="sm" variant="outline" onClick={e => { e.stopPropagation(); handleComplete(alert) }}>
+                          Concluir
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))
               )}
