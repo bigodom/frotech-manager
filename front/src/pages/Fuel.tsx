@@ -20,6 +20,7 @@ export default function Fuel() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedMonth, setSelectedMonth] = useState<string>("")
   const [selectedYear, setSelectedYear] = useState<string>("")
+  const [selectedFuelType, setSelectedFuelType] = useState<string>("")
   const PAGE_SIZE = 10
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -108,8 +109,10 @@ export default function Fuel() {
       selectedMonth === "" || selectedMonth === "all" || monthUtc === parseInt(selectedMonth)
     const matchesYear =
       selectedYear === "" || selectedYear === "all" || yearUtc === parseInt(selectedYear)
+    const matchesFuelType =
+      selectedFuelType === "" || fuel.fuelType.toLowerCase().includes(selectedFuelType.toLowerCase())
 
-    return matchesSearch && matchesMonth && matchesYear
+    return matchesSearch && matchesMonth && matchesYear && matchesFuelType
   })
 
   
@@ -120,7 +123,7 @@ export default function Fuel() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, selectedMonth, selectedYear])
+  }, [searchTerm, selectedMonth, selectedYear, selectedFuelType])
 
 
   const sortedFilteredFuels = [...filteredFuels].sort((a, b) => {
@@ -158,8 +161,12 @@ export default function Fuel() {
         .filter((y) => !Number.isNaN(y))
     )
   )
-    .sort((a, b) => b - a)
-    .map((y) => String(y))
+  .sort((a, b) => b - a)
+  .map((y) => String(y))
+
+  const availableFuelTypes = Array.from(
+    new Set(fuels.map((f) => f.fuelType).filter((type) => type && type.trim() !== ""))
+  ).sort()
 
   return (
     <div className="space-y-6">
@@ -254,6 +261,18 @@ export default function Fuel() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="max-w-sm"
               />
+              <Input
+                placeholder="Filtrar por tipo de combustível..."
+                value={selectedFuelType}
+                onChange={(e) => setSelectedFuelType(e.target.value)}
+                list="fuelTypes"
+                className="max-w-sm"
+              />
+              <datalist id="fuelTypes">
+                {availableFuelTypes.map((type) => (
+                  <option key={type} value={type} />
+                ))}
+              </datalist>
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Mês" />
@@ -276,7 +295,7 @@ export default function Fuel() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline" onClick={() => { setSelectedMonth(""); setSelectedYear("") }}>Limpar</Button>
+              <Button variant="outline" onClick={() => { setSelectedMonth(""); setSelectedYear(""); setSelectedFuelType("") }}>Limpar</Button>
             </div>
             <div className="max-h-[calc(100vh-300px)] overflow-auto">
               <Table>

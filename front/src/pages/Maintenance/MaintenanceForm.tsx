@@ -211,7 +211,7 @@ export function MaintenanceForm({ initialData = {}, onSubmit, onCancel, submitLa
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="value">Valor Unitário *</Label>
-                    <Input id="value" name="value" type="number" step="0.01" value={form.value || ''} onChange={handleChange} required />
+                    <Input id="value" name="value" type="number" step="0.001" value={form.value || ''} onChange={handleChange} required />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="totalCost">Custo Total *</Label>

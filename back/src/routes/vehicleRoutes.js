@@ -1,6 +1,6 @@
 import { Router } from 'express';
 const vehicleRouter = Router();
-import { createVehicle, getAllVehicles, getVehicleById, updateVehicle, deleteVehicle, updateMileage, updateMileageByPlate, updateMileageByPlateBatch, getPlates } from '../controllers/vehicleController.js';
+import { createVehicle, getAllVehicles, getVehicleById, updateVehicle, deleteVehicle, updateMileage, updateMileageByPlate, updateMileageByPlateBatch, getPlates, getVehiclesByPlate } from '../controllers/vehicleController.js';
 
 vehicleRouter.route('/vehicle')
     .get(getAllVehicles)
@@ -22,5 +22,8 @@ vehicleRouter.route('/mileage-batch')
 
 vehicleRouter.route('/plates')
     .get(getPlates);
+
+vehicleRouter.route('/vehicles-by-plate/:plate')
+    .get(getVehiclesByPlate);
 
 export default vehicleRouter;

@@ -48,7 +48,6 @@ export default function InvoicePage() {
               <TableHead>Data</TableHead>
               <TableHead>Quantidade</TableHead>
               <TableHead>Valor Unitário</TableHead>
-              <TableHead>ID</TableHead>
               <TableHead>Custo Total (R$)</TableHead>
               <TableHead>Emissor</TableHead>
             </TableRow>
@@ -71,7 +70,6 @@ export default function InvoicePage() {
                   <TableCell>{formatDate(item.date)}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
                   <TableCell>{item.value?.toLocaleString ? item.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : item.value}</TableCell>
-                  <TableCell>{item.id}</TableCell>
                   <TableCell>{item.totalCost?.toLocaleString ? item.totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : item.totalCost}</TableCell>
                   <TableCell>{item.issuer}</TableCell>
                 </TableRow>

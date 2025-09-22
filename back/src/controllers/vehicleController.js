@@ -219,6 +219,18 @@ const getPlates = async (req, res) => {
   }
 }
 
+const getVehiclesByPlate = async (req, res) => {
+  /* #swagger.tags = ['Vehicle']
+  #swagger.description = 'Get vehicles by plate' */
+  try {
+    const { plate } = req.params;
+    const vehicles = await prisma.vehicle.findMany({ where: { plate } });
+    res.json(vehicles);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
 export{
   createVehicle,
   getAllVehicles,
@@ -228,5 +240,6 @@ export{
   updateMileage,
   updateMileageByPlate,
   updateMileageByPlateBatch,
-  getPlates
+  getPlates,
+  getVehiclesByPlate
 }; 
